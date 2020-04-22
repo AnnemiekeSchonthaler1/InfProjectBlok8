@@ -2,7 +2,7 @@ from Bio import Entrez
 from Bio import Medline
 
 # I made the searchTerm global because it is referenced in every method
-searchTerm = "orchid"
+searchTerm = "ATP8"
 
 
 def main():
@@ -11,7 +11,6 @@ def main():
     # this term could be a gene or a description
     # searchTerm = "orchid"
     maxResults = getAmountOfResults()
-    print(maxResults)
     # There is no need to look for results if there aren't any
     if maxResults != 0:
         idList = getPubmedIDs(maxResults)
@@ -43,28 +42,42 @@ def getPubmedIDs(maxResults):
 
 
 def getPubmedArticlesByID(idList):
+    pubmedList = []
     handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
                            retmode="text")
     records = Medline.parse(handle)
     records = list(records)
     for record in records:
         # todo fix this and add all the output thingies needed
-        pubmedEntryInstance = pubmedEntry(record, searchTerm)
-
+        pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"), record.get("MH"))
+        pubmedEntryInstance.setDatePublication(record.get("DP"))
+        pubmedEntryInstance.setAbout(record.get("AB"))
 
 # todo maak deze class af met alle gevraagde dingen
 
 class pubmedEntry():
     # The __ make this a private attribute to encapsule it
     __geneID = ""
+    __datePublication = 0
+    __about = ""
 
-    def __init__(self, pubmedID, searchterm):
-        # todo this kip print is only here to know that is works okay don't judge me plz
-        print("kip")
+    def __init__(self, pubmedID, searchterm, author, mhTerms):
+        self.pubmedID = pubmedID
+        self.searchTerm = searchterm
+        self.author = author
+        self.mhTerms = mhTerms
 
     def setGeneID(self, geneIDIncoming):
-        self.geneID = geneIDIncoming
+        self.__geneID = geneIDIncoming
         # todo maak hier misschien iets wat controleert of er een recenter synoniem is van de gennaam
+
+    def setDatePublication(self, date):
+        self.__datePublication = date
+        # todo zorg dat alle dates on hetzelfde format zijn, wat sorteerbaar is
+
+    def setAbout(self, about):
+        if about is not None:
+            self.__about = about
 
 
 main()
