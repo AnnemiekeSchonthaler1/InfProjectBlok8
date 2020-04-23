@@ -1,25 +1,31 @@
 from Bio import Entrez
 from Bio import Medline
-
-# I made the searchTerm global because it is referenced in every method
-searchTerm = "ATP8"
+import time
 
 
-def main():
+def main(searchTerm, geneList):
+    # This code formulates a query
+    searchTerm = searchTerm+" AND ({})"
+    for gene in geneList:
+        searchTerm = searchTerm.format(gene + " OR {}")
+    searchTerm = searchTerm.replace("OR {}", "")
+
+    start = time.time()
     # I tell the databases who I am
     Entrez.email = "annemiekeschonthaler@gmail.com"
     # this term could be a gene or a description
     # searchTerm = "orchid"
-    maxResults = getAmountOfResults()
+    maxResults = getAmountOfResults(searchTerm)
     # There is no need to look for results if there aren't any
     if maxResults != 0:
-        idList = getPubmedIDs(maxResults)
-        getPubmedArticlesByID(idList)
+        idList = getPubmedIDs(maxResults, searchTerm)
+        getPubmedArticlesByID(idList, searchTerm)
+    print("Elapsed time: "+str((time.time() - start)))
 
 
 # This method checks how many potential results there are with a query. This is needed to give a maximum of results
 # to pubmed, to fetch.
-def getAmountOfResults():
+def getAmountOfResults(searchTerm):
     # Dit is om te zoeken in alle databases op de term "orchid"
     handle = Entrez.egquery(term=searchTerm)
     # Deze regel is om de output die terug komt te lezen
@@ -29,11 +35,11 @@ def getAmountOfResults():
     for row in record["eGQueryResult"]:
         if row["DbName"] == "pubmed":
             maxResults = row["Count"]
-
+    print(maxResults)
     return maxResults
 
 
-def getPubmedIDs(maxResults):
+def getPubmedIDs(maxResults, searchTerm):
     handle = Entrez.esearch(db="pubmed", term=searchTerm, retmax=maxResults)
     record = Entrez.read(handle)
     handle.close()
@@ -41,7 +47,7 @@ def getPubmedIDs(maxResults):
     return idlist
 
 
-def getPubmedArticlesByID(idList):
+def getPubmedArticlesByID(idList, searchTerm):
     pubmedList = []
     handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
                            retmode="text")
@@ -52,6 +58,8 @@ def getPubmedArticlesByID(idList):
         pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"), record.get("MH"))
         pubmedEntryInstance.setDatePublication(record.get("DP"))
         pubmedEntryInstance.setAbout(record.get("AB"))
+        print(record.get("AB"))
+
 
 # todo maak deze class af met alle gevraagde dingen
 
@@ -80,4 +88,4 @@ class pubmedEntry():
             self.__about = about
 
 
-main()
+main("Developmental delay", ["POLR3B", "CHD8"])
