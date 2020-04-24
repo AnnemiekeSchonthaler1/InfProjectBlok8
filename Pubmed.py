@@ -1,6 +1,7 @@
 from Bio import Entrez
 from Bio import Medline
 import time
+import weakref
 
 
 def main(searchTerm, geneList):
@@ -68,12 +69,14 @@ class pubmedEntry():
     __geneID = ""
     __datePublication = 0
     __about = ""
+    instancesList = []
 
     def __init__(self, pubmedID, searchterm, author, mhTerms):
         self.pubmedID = pubmedID
         self.searchTerm = searchterm
         self.author = author
         self.mhTerms = mhTerms
+        pubmedEntry.instancesList.append(self)
 
     def setGeneID(self, geneIDIncoming):
         self.__geneID = geneIDIncoming
@@ -88,4 +91,8 @@ class pubmedEntry():
             self.__about = about
 
 
-main("Developmental delay", ["POLR3B", "CHD8"])
+main("Developmental delay", ["POLR3B", "CHD8", "KDM3B"])
+
+# print(pubmedEntry.instancesList)
+# for item in pubmedEntry.instancesList:
+#     print(item.author)
