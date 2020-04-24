@@ -79,6 +79,10 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
     <label class="w3-text-black"><b>disease-characteristics</b></label>
     <input class="w3-input w3-border w3-white" name="disease_characteristic" type="text"></p>
     <p>
+    <p>
+    <label class="w3-text-black"><b>E-mail</b></label>
+    <input class="w3-input w3-border w3-white" name="mail" type="text"></p>
+    <p>
       <p><label class="w3-text-black"><b>Gene List</b></label></p>
         <p><textarea name="gene_list" rows="3" cols="74.5">
 
@@ -97,6 +101,26 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   </form>
 </div>
      <!--  end FORM -->
+ <!-- start Results -->
+    <div class="w3-card-4 w3-white">
+  <div class="w3-container w3-theme-l3-darkpurple">
+    <h2>Results </h2>
+  </div>
+     {% for gene, ids in genedic.items()%}
+         <div class = "w3-card w3-white, w3-margin">
+             <button onclick="myFunction('{{ gene }}')" class="w3-button w3-block w3-theme-l3-darkpurple w3-left-align">
+                 {{ gene }}</button>
+            <div id="{{ gene }}" class="w3-container w3-hide w3-border">
+              <ul class="w3-ul">
+                {% for item in ids %}
+                <li>{{ item.pubmedID }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+         </div>
+     {% endfor %}
+
+</div>
   <!-- About Section -->
   <div class="w3-card-4 w3-white">
   <div class="w3-content w3-justify w3-text-grey w3-padding-32 w3-margin" id="about">
@@ -159,6 +183,17 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 
 <!-- END PAGE CONTENT -->
 </div>
+<script>
+function myFunction(id) {
+    const x = document.getElementById(id);
+    if (x.className.indexOf("w3-show") === -1) {
+    x.className += " w3-show";
+  } else {
+    x.className = x.className.replace(" w3-show", "");
+  }
+}
+</script>
+
 
 </body>
 </html>
