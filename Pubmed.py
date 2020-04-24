@@ -1,27 +1,57 @@
 from Bio import Entrez
 from Bio import Medline
 import time
-import weakref
+import mysql.connector
+from mysql.connector import Error
 
 
-def main(searchTerm, geneList):
-    # This code formulates a query
-    searchTerm = searchTerm+" AND ({})"
-    for gene in geneList:
-        searchTerm = searchTerm.format(gene + " OR {}")
-    searchTerm = searchTerm.replace("OR {}", "")
-
+def main(searchTerm, geneList, email):
     start = time.time()
-    # I tell the databases who I am
-    Entrez.email = "annemiekeschonthaler@gmail.com"
-    # this term could be a gene or a description
-    # searchTerm = "orchid"
+    # I call a function to formulate a query
+    searchTerm = makeQuery(searchTerm, geneList)
+    # I set the email
+    Entrez.email = email
     maxResults = getAmountOfResults(searchTerm)
     # There is no need to look for results if there aren't any
     if maxResults != 0:
         idList = getPubmedIDs(maxResults, searchTerm)
         getPubmedArticlesByID(idList, searchTerm)
-    print("Elapsed time: "+str((time.time() - start)))
+    print("Elapsed time: " + str((time.time() - start)))
+
+
+def makeQuery(searchTerm, geneList):
+    # This code formulates a query
+    searchTerm = searchTerm + " AND ({})"
+    for gene in geneList:
+        searchTerm = searchTerm.format(gene + " OR {}")
+    searchTerm = searchTerm.replace("OR {}", "")
+
+    #todo als findsynonyms klaar is moet die hier aangeroepen
+    return searchTerm
+
+
+def findSynonyms():
+    # todo vul de database en maak hier een fancy query
+    try:
+        connection = mysql.connector.connect(
+            host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
+            db='rucia',
+            user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
+            password="kip")
+        if connection.is_connected():
+            db_Info = connection.get_server_info()
+            print("Connected to MySQL Server version ", db_Info)
+            cursor = connection.cursor()
+            cursor.execute("select * from ")
+            records = cursor.fetchall()
+            print(records)
+    except Error as e:
+        print("Error while connecting to MySQL", e)
+    finally:
+        if (connection.is_connected()):
+            cursor.close()
+            connection.close()
+            print("MySQL connection is closed")
 
 
 # This method checks how many potential results there are with a query. This is needed to give a maximum of results
@@ -80,7 +110,6 @@ class pubmedEntry():
 
     def setGeneID(self, geneIDIncoming):
         self.__geneID = geneIDIncoming
-        # todo maak hier misschien iets wat controleert of er een recenter synoniem is van de gennaam
 
     def setDatePublication(self, date):
         self.__datePublication = date
@@ -90,9 +119,10 @@ class pubmedEntry():
         if about is not None:
             self.__about = about
 
+    def getAbout(self):
+        return self.__about
 
-main("Developmental delay", ["POLR3B", "CHD8", "KDM3B"])
-
+# main("Gallus", ["ATP8"], "annemiekeschonthaler@gmail.com")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
