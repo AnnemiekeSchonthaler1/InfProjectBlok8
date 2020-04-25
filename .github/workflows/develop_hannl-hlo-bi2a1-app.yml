@@ -18,7 +18,7 @@ jobs:
     - name: Set up Python version
       uses: actions/setup-python@v1
       with:
-        python-version: '3.6.10'
+        python-version: '3.6'
 
     - name: Build using AppService-Build
       uses: azure/appservice-build@v1
@@ -30,4 +30,4 @@ jobs:
       with:
         app-name: 'hannl-hlo-bi2a1-app'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_24820c5bae35496390f9cd096e889e07 }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_a8b691cfc8504322ab9df699b6816208 }}
