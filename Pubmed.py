@@ -4,11 +4,21 @@ import time
 import mysql.connector
 from mysql.connector import Error
 
+dictSynonyms = {}
+
 
 def main(searchTerm, geneList, email):
     start = time.time()
+    # I add the genes to a dict to keep track of gene and synonym
+    for gene in geneList:
+        if not gene in dictSynonyms.keys():
+            dictSynonyms[gene] = []
+        else:
+            print("Waarom krijg ik dubbele wat is deze")
+            # todo werp een exception op als dit gebeurt
     # I call a function to formulate a query
     searchTerm = makeQuery(searchTerm, geneList)
+    print(dictSynonyms)
     # I set the email
     Entrez.email = email
     maxResults = getAmountOfResults(searchTerm)
@@ -28,6 +38,7 @@ def makeQuery(searchTerm, geneList):
     searchTerm = searchTerm.replace("OR {}", "")
     print(searchTerm)
     return searchTerm
+
 
 # Deze functie breidt de genlijst uit met de synoniemen.
 def findSynonyms(geneList):
@@ -56,6 +67,7 @@ def findSynonyms(geneList):
         if record[0] in geneList:
             if not record[1] in synonyms:
                 geneList.append(record[1])
+                dictSynonyms.get(str(record[0])).append(record[1])
             synonyms.append(record[1])
     return geneList
 
@@ -91,14 +103,11 @@ def getPubmedArticlesByID(idList, searchTerm):
     records = Medline.parse(handle)
     records = list(records)
     for record in records:
-        # todo fix this and add all the output thingies needed
         pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"), record.get("MH"))
         pubmedEntryInstance.setDatePublication(record.get("DP"))
         pubmedEntryInstance.setAbout(record.get("AB"))
         print(record.get("AB"))
 
-
-# todo maak deze class af met alle gevraagde dingen
 
 class pubmedEntry():
     # The __ make this a private attribute to encapsule it
@@ -129,10 +138,11 @@ class pubmedEntry():
         return self.__about
 
     def getSynonyms(self):
-        #todo maak dit
-        print("hoi")
+        # this returns a dict with as key the given geneid and as value the synonyms
+        return dictSynonyms
 
-# main("Homo sapiens", ["ATP8", "A1BG-AS1"], "annemiekeschonthaler@gmail.com")
+
+main("Homo sapiens", ["ATP8", "A1BG-AS1"], "annemiekeschonthaler@gmail.com")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
