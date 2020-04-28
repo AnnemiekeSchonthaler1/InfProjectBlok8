@@ -65,7 +65,7 @@ def findSynonyms(geneList):
     synonyms = []
     for record in records:
         if record[0] in geneList:
-            if not record[1] in synonyms:
+            if not record[1] in synonyms and not record[1] == "":
                 geneList.append(record[1])
                 dictSynonyms.get(str(record[0])).append(record[1])
             synonyms.append(record[1])
@@ -142,7 +142,7 @@ class pubmedEntry():
         return dictSynonyms
 
 
-main("Homo sapiens", ["ATP8", "A1BG-AS1"], "annemiekeschonthaler@gmail.com")
+main("Homo sapiens", ["ATP8", "POLR3B"], "annemiekeschonthaler@gmail.com")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
