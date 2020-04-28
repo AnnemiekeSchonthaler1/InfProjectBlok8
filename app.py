@@ -4,7 +4,7 @@ from flask import Flask, render_template, request
 import platform
 import datetime
 import Pubmed
-import pubmed_search
+#import pubmed_search
 
 app = Flask(__name__)
 
