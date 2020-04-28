@@ -20,18 +20,17 @@ def main(searchTerm, geneList, email):
 
 
 def makeQuery(searchTerm, geneList):
+    geneList = findSynonyms(geneList)
     # This code formulates a query
     searchTerm = searchTerm + " AND ({})"
     for gene in geneList:
         searchTerm = searchTerm.format(gene + " OR {}")
     searchTerm = searchTerm.replace("OR {}", "")
-
-    #todo als findsynonyms klaar is moet die hier aangeroepen
+    print(searchTerm)
     return searchTerm
 
-
-def findSynonyms():
-    # todo vul de database en maak hier een fancy query
+# Deze functie breidt de genlijst uit met de synoniemen.
+def findSynonyms(geneList):
     try:
         connection = mysql.connector.connect(
             host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
@@ -42,9 +41,9 @@ def findSynonyms():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
             cursor = connection.cursor()
-            cursor.execute("select * from ")
+            cursor.execute("select symbool, vorig_symbool "
+                           "from huidig_symbool join vorig_symbool on (symbool=huidig_symbool_symbool);")
             records = cursor.fetchall()
-            print(records)
     except Error as e:
         print("Error while connecting to MySQL", e)
     finally:
@@ -52,6 +51,13 @@ def findSynonyms():
             cursor.close()
             connection.close()
             print("MySQL connection is closed")
+    synonyms = []
+    for record in records:
+        if record[0] in geneList:
+            if not record[1] in synonyms:
+                geneList.append(record[1])
+            synonyms.append(record[1])
+    return geneList
 
 
 # This method checks how many potential results there are with a query. This is needed to give a maximum of results
@@ -122,7 +128,11 @@ class pubmedEntry():
     def getAbout(self):
         return self.__about
 
-# main("Gallus", ["ATP8"], "annemiekeschonthaler@gmail.com")
+    def getSynonyms(self):
+        #todo maak dit
+        print("hoi")
+
+# main("Homo sapiens", ["ATP8", "A1BG-AS1"], "annemiekeschonthaler@gmail.com")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
