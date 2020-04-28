@@ -31,7 +31,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 <nav class="w3-sidebar w3-card-4 w3-bar-block w3-small w3-hide-small w3-center ">
   <!-- Avatar image in top left corner -->
   <img src="../static/caticon.gif" style="width:100%" alt="icon">
-  <a href="#" class="w3-bar-item w3-button w3-padding-large w3-theme-l3 w3-hover-white w3-section ">
+  <a href="#" class="w3-bar-item w3-button w3-padding-large w3-theme-l3-darkpurple w3-hover-white w3-section ">
     <i class="fa fa-home w3-xxlarge"></i>
     <p>HOME</p>
   </a>
@@ -39,7 +39,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
     <i class="fa fa-user w3-xxlarge"></i>
     <p>ABOUT</p>
   </a>
-    <a href="#search" class="w3-bar-item w3-button w3-padding-large w3-theme-l3 w3-hover-white w3-section">
+    <a href='{{ url_for('results') }}' class="w3-bar-item w3-button w3-padding-large w3-theme-l3 w3-hover-white w3-section">
     <i class="fa fa-search w3-xxlarge"></i>
     <p>SEARCH</p>
   </a>
@@ -54,7 +54,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <div class="w3-bar w3-theme-l3-darkpurple w3-hover-opacity-off w3-center w3-small">
     <a href="#" class="w3-bar-item w3-button w3-text-white" style="width:25% !important">HOME</a>
     <a href="#about" class="w3-bar-item w3-button w3-text-white" style="width:25% !important">ABOUT</a>
-    <a href="#search" class="w3-bar-item w3-button w3-text-white" style="width:25% !important">SEARCH</a>
+    <a href='{{ url_for('results') }}' class="w3-bar-item w3-button w3-text-white" style="width:25% !important">SEARCH</a>
       <a href="#team" class="w3-bar-item w3-button w3-text-white" style="width:25% !important"></a>
   </div>
 </div>
@@ -69,58 +69,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <div class="w3-container w3-padding-32 w3-center"  >
       <img src="../static/coder.gif" alt="lucas is so cute" class="w3-image" width="800" height="600">
   </div>
- <!-- FORM -->
-    <div class="w3-card-4 w3-white">
-  <div class="w3-container w3-theme-l3-darkpurple">
-    <h2>Search </h2>
-  </div>
-  <form class="w3-container" method="post" action="http://localhost:5000/result">
-    <p>
-    <label class="w3-text-black"><b>disease-characteristics</b></label>
-    <input class="w3-input w3-border w3-white" name="disease_characteristic" type="text"></p>
-    <p>
-    <p>
-    <label class="w3-text-black"><b>E-mail</b></label>
-    <input class="w3-input w3-border w3-white" name="mail" type="text"></p>
-    <p>
-      <p><label class="w3-text-black"><b>Gene List</b></label></p>
-        <p><textarea name="gene_list" rows="3" cols="74.5">
 
-        </textarea>
-    </p>
-    <p>
-    <select class="w3-select w3-section" name="publication_date">
-      <option value="" disabled selected>Choose max publication date</option>
-      <option value="3">3 Months</option>
-      <option value="6">6 Months</option>
-      <option value="9">9 Months</option>
-    </select>
-    </p>
-    <p>
-    <button class="w3-btn w3-theme-l3-darkpurple w3-text-white">Search</button></p>
-  </form>
-</div>
-     <!--  end FORM -->
- <!-- start Results -->
-    <div class="w3-card-4 w3-white">
-  <div class="w3-container w3-theme-l3-darkpurple">
-    <h2>Results </h2>
-  </div>
-     {% for gene, ids in genedic.items()%}
-         <div class = "w3-card w3-white, w3-margin">
-             <button onclick="myFunction('{{ gene }}')" class="w3-button w3-block w3-theme-l3-darkpurple w3-left-align">
-                 {{ gene }}</button>
-            <div id="{{ gene }}" class="w3-container w3-hide w3-border">
-              <ul class="w3-ul">
-                {% for item in ids %}
-                <li>{{ item.pubmedID }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-         </div>
-     {% endfor %}
-
-</div>
   <!-- About Section -->
   <div class="w3-card-4 w3-white">
   <div class="w3-content w3-justify w3-text-grey w3-padding-32 w3-margin" id="about">
