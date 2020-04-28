@@ -162,7 +162,7 @@ class pubmedEntry():
         return self.__title
 
 
-main("Homo sapiens", ["ATP8", "POLR3B"], "annemiekeschonthaler@gmail.com")
+#main("Homo sapiens", ["ATP8", "POLR3B"], "annemiekeschonthaler@gmail.com")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
