@@ -24,6 +24,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 /* Add a left margin to the "page content" that matches the width of the sidebar (120px) */
 #main {margin-left: 120px}
 /* Remove margins from "page content" on small screens */
+
 </style>
 <body class="w3-theme-blue">
 
@@ -74,10 +75,12 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
     <input class="w3-input w3-border w3-white" name="mail" type="text"></p>
     <p>
       <p><label class="w3-text-black"><b>Gene List</b></label></p>
-        <p><textarea name="gene_list" rows="3" cols="74.5">
-
-        </textarea>
-    </p>
+        <p>
+            <label>
+            <textarea placeholder="Gene1 &#10;Gene2&#10;Gene3 &#10;etc.."
+                      name="gene_list" rows="3" cols="74.5"></textarea>
+            </label>
+        </p>
     <p>
     <select class="w3-select w3-section" name="publication_date">
       <option value="" disabled selected>Choose max publication date</option>
