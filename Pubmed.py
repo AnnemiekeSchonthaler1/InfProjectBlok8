@@ -5,6 +5,11 @@ import mysql.connector
 from mysql.connector import Error
 
 dictSynonyms = {}
+dictMonths = {'Jan': '-01-', 'Feb': '-02-', 'Mar': '-03-',
+              'Apr': '-04-', 'May': '-05-', 'Jun': '-06-',
+              'Jul': '-07-', 'Aug': '-08-', 'Sep': '-09-',
+              'Oct': '-10-', 'Nov': '-11-', 'Dec': '-12-',
+              '': '-01-'}
 
 
 def main(searchTerm, geneList, email):
@@ -106,7 +111,8 @@ def getPubmedArticlesByID(idList, searchTerm):
         pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"), record.get("MH"))
         pubmedEntryInstance.setDatePublication(record.get("DP"))
         pubmedEntryInstance.setAbout(record.get("AB"))
-        print(record.get("AB"))
+        pubmedEntryInstance.setTitle(record.get("TI"))
+        print(record)
 
 
 class pubmedEntry():
@@ -114,6 +120,7 @@ class pubmedEntry():
     __geneID = ""
     __datePublication = 0
     __about = ""
+    __title = ""
     instancesList = []
 
     def __init__(self, pubmedID, searchterm, author, mhTerms):
@@ -127,8 +134,15 @@ class pubmedEntry():
         self.__geneID = geneIDIncoming
 
     def setDatePublication(self, date):
+        # so it will split into at least 3 parts
+        date += "  "
+        dateList = str(date).split(" ")
+        dateList[1] = dictMonths.get(dateList[1])
+        if dateList[2] == '':
+            dateList[2] = '01'
+        date = ''.join(dateList)
+        date = date.replace(" ", "")
         self.__datePublication = date
-        # todo zorg dat alle dates on hetzelfde format zijn, wat sorteerbaar is
 
     def setAbout(self, about):
         if about is not None:
@@ -140,6 +154,12 @@ class pubmedEntry():
     def getSynonyms(self):
         # this returns a dict with as key the given geneid and as value the synonyms
         return dictSynonyms
+
+    def setTitle(self, title):
+        self.__title = title
+
+    def getTitle(self):
+        return self.__title
 
 
 main("Homo sapiens", ["ATP8", "POLR3B"], "annemiekeschonthaler@gmail.com")
