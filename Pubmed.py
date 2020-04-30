@@ -5,14 +5,21 @@ import mysql.connector
 from mysql.connector import Error
 
 dictSynonyms = {}
-dictMonths = {'Jan': '-01-', 'Feb': '-02-', 'Mar': '-03-',
-              'Apr': '-04-', 'May': '-05-', 'Jun': '-06-',
-              'Jul': '-07-', 'Aug': '-08-', 'Sep': '-09-',
-              'Oct': '-10-', 'Nov': '-11-', 'Dec': '-12-',
-              '': '-01-'}
+dictMonths = {'Jan': '/01/', 'Feb': '/02/', 'Mar': '/03/',
+              'Apr': '/04/', 'May': '/05/', 'Jun': '/06/',
+              'Jul': '/07/', 'Aug': '/08/', 'Sep': '/09/',
+              'Oct': '/10/', 'Nov': '/11/', 'Dec': '/12/',
+              '': '/01/'}
+mindate = "1990/01/01"
+maxdate = "2020/01/01"
 
 
-def main(searchTerm, geneList, email):
+def main(searchTerm, geneList, email, searchDate, today):
+    global mindate
+    mindate = str(searchDate).replace("-", "/")
+    print(mindate)
+    global maxdate
+    maxdate = str(today).replace("-", "/")
     start = time.time()
     # I add the genes to a dict to keep track of gene and synonym
     for gene in geneList:
@@ -28,9 +35,10 @@ def main(searchTerm, geneList, email):
     Entrez.email = email
     maxResults = getAmountOfResults(searchTerm)
     # There is no need to look for results if there aren't any
-    if maxResults != 0:
+    if int(maxResults) != 0:
         idList = getPubmedIDs(maxResults, searchTerm)
-        getPubmedArticlesByID(idList, searchTerm)
+        if not len(idList) == 0:
+            getPubmedArticlesByID(idList, searchTerm)
     print("Elapsed time: " + str((time.time() - start)))
 
 
@@ -94,7 +102,8 @@ def getAmountOfResults(searchTerm):
 
 
 def getPubmedIDs(maxResults, searchTerm):
-    handle = Entrez.esearch(db="pubmed", term=searchTerm, retmax=maxResults)
+    handle = Entrez.esearch(db="pubmed", term=searchTerm, retmax=maxResults, datetype='pdat', mindate=mindate,
+                            maxdate=maxdate)
     record = Entrez.read(handle)
     handle.close()
     idlist = record["IdList"]
@@ -108,11 +117,11 @@ def getPubmedArticlesByID(idList, searchTerm):
     records = Medline.parse(handle)
     records = list(records)
     for record in records:
+        print(record)
         pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"), record.get("MH"))
         pubmedEntryInstance.setDatePublication(record.get("DP"))
         pubmedEntryInstance.setAbout(record.get("AB"))
         pubmedEntryInstance.setTitle(record.get("TI"))
-        print(record)
 
 
 class pubmedEntry():
@@ -161,8 +170,7 @@ class pubmedEntry():
     def getTitle(self):
         return self.__title
 
-
-#main("Homo sapiens", ["ATP8", "POLR3B"], "annemiekeschonthaler@gmail.com")
+# main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
