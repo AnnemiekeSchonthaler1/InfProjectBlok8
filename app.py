@@ -4,7 +4,8 @@ from flask import Flask, render_template, request
 import platform
 import datetime
 import Pubmed
-#import pubmed_search
+
+# import pubmed_search
 
 app = Flask(__name__)
 
@@ -12,7 +13,6 @@ app = Flask(__name__)
 @app.route('/', methods=['POST', 'GET'])
 def hello_world():
     gene_dic = {}
-
 
     print(platform.sys.version)
     return render_template("Mainpage.html", genedic=gene_dic)
@@ -45,7 +45,7 @@ def results():
                     thing = thing.strip(" ")
                     if thing != " " and thing != "":
                         gene_list.append(thing)
-        Pubmed.main(searchTerm=disease_char, geneList=gene_list, email=mail)
+        Pubmed.main(searchTerm=disease_char, geneList=gene_list, email=mail, searchDate=search_date, today=today)
         Synonymdict = Pubmed.dictSynonyms
         for gene, synonyms in Synonymdict.items():
             if gene != '':
@@ -68,8 +68,9 @@ def do_MATH_months(sourcedate, months):
     month = sourcedate.month - 1 + months
     year = sourcedate.year + month // 12
     month = month % 12 + 1
-    day = min(sourcedate.day, calendar.monthrange(year,month)[1])
+    day = min(sourcedate.day, calendar.monthrange(year, month)[1])
     return datetime.date(year, month, day)
+
 
 # dict = {genename : { genename : [values] , synonymname : [values], synonymname : [values]}, othergene : { } }
 if __name__ == '__main__':
