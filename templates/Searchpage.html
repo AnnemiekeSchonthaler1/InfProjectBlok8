@@ -68,11 +68,11 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <form class="w3-container" method="post" action="http://localhost:5000/result">
     <p>
     <label class="w3-text-black"><b>disease-characteristics</b></label>
-    <input class="w3-input w3-border w3-white" name="disease_characteristic" type="text"></p>
+    <input class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
     <p>
     <p>
     <label class="w3-text-black"><b>E-mail</b></label>
-    <input class="w3-input w3-border w3-white" name="mail" type="text"></p>
+    <input  placeholder="Your.Name.Here@example.org" class="w3-input w3-border w3-white" name="mail" type="text" pattern="\S+@\S+" required></p>
     <p>
       <p><label class="w3-text-black"><b>Gene List</b></label></p>
         <p>
@@ -99,6 +99,11 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <div class="w3-container w3-theme-l3-darkpurple">
     <h2>Results </h2>
   </div>
+    <div class="w3-container w3-section w3-theme-l1" >
+        {% if plot != None %}
+        <img class="w3-margin" src="data:image/png;base64, {{ plot }}" alt="hi">
+        {% endif %}
+    </div>
      {% for gene, ids in genedic.items()%}
          <div class = "w3-card w3-white, w3-margin">
              <button onclick="myFunction('{{ gene }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
