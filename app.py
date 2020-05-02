@@ -8,6 +8,7 @@ import datetime
 import Pubmed
 import pubmed_search
 import Graphs
+
 app = Flask(__name__)
 
 
@@ -28,7 +29,7 @@ def results():
     gene_dic = {}
     recipe_data = {}
     search_date = ""
-    plot_url =""
+    plot_url = ""
     today = datetime.date.today()
     if request.method == 'POST':
         result = request.form
@@ -92,6 +93,20 @@ def do_MATH_months(sourcedate, months):
     return datetime.date(year, month, day)
 
 
-# dict = {genename : { genename : [values] , synonymname : [values], synonymname : [values]}, othergene : { } }
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(410)
+def page_gone(e):
+    return render_template('410.html'), 410
+
+
+@app.errorhandler(500)
+def internal_error(e):
+    return render_template('500.html'), 500
+
+
 if __name__ == '__main__':
     app.run()
