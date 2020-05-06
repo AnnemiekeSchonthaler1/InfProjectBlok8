@@ -4,7 +4,6 @@ import time
 import mysql.connector
 from mysql.connector import Error
 
-dictSynonyms = {}
 dictMonths = {'Jan': '/01/', 'Feb': '/02/', 'Mar': '/03/',
               'Apr': '/04/', 'May': '/05/', 'Jun': '/06/',
               'Jul': '/07/', 'Aug': '/08/', 'Sep': '/09/',
@@ -14,7 +13,8 @@ mindate = "1990/01/01"
 maxdate = "2020/01/01"
 
 
-def main(searchTerm, geneList, email, searchDate, today):
+def main(searchList, geneList, email, searchDate, today):
+    dictSynonyms = {}
     global mindate
     mindate = str(searchDate).replace("-", "/")
     print(mindate)
@@ -29,7 +29,7 @@ def main(searchTerm, geneList, email, searchDate, today):
             print("Waarom krijg ik dubbele wat is deze")
             # todo werp een exception op als dit gebeurt
     # I call a function to formulate a query
-    searchTerm = makeQuery(searchTerm, geneList)
+    searchTerm = makeQuery(searchList, geneList, dictSynonyms)
     print(dictSynonyms)
     # I set the email
     Entrez.email = email
@@ -39,13 +39,21 @@ def main(searchTerm, geneList, email, searchDate, today):
         idList = getPubmedIDs(maxResults, searchTerm)
         if not len(idList) == 0:
             getPubmedArticlesByID(idList, searchTerm)
+    pubmedEntry.dictSynonyms = dictSynonyms
     print("Elapsed time: " + str((time.time() - start)))
 
 
-def makeQuery(searchTerm, geneList):
-    geneList = findSynonyms(geneList)
+def makeQuery(searchList, geneList, dictsynonym):
+    searchTerm = "({})"
+
+    for term in searchList:
+        term = term + " OR {} "
+        searchTerm = searchTerm.format(str(term))
+    searchTerm = searchTerm.replace(" OR {}", "")
+    searchTerm += " AND ({})"
+
+    geneList = findSynonyms(geneList, dictsynonym)
     # This code formulates a query
-    searchTerm = searchTerm + " AND ({})"
     for gene in geneList:
         searchTerm = searchTerm.format(gene + " OR {}")
     searchTerm = searchTerm.replace("OR {}", "")
@@ -54,7 +62,7 @@ def makeQuery(searchTerm, geneList):
 
 
 # Deze functie breidt de genlijst uit met de synoniemen.
-def findSynonyms(geneList):
+def findSynonyms(geneList, dictSynonyms):
     try:
         connection = mysql.connector.connect(
             host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
@@ -131,6 +139,7 @@ class pubmedEntry():
     __about = ""
     __title = ""
     instancesList = []
+    dictSynonyms = {}
 
     def __init__(self, pubmedID, searchterm, author, mhTerms):
         self.pubmedID = pubmedID
@@ -144,13 +153,13 @@ class pubmedEntry():
 
     def setDatePublication(self, date):
         # so it will split into at least 3 parts
-        date += "  "
-        dateList = str(date).split(" ")
-        dateList[1] = dictMonths.get(dateList[1])
-        if dateList[2] == '':
-            dateList[2] = '01'
-        date = ''.join(dateList)
-        date = date.replace(" ", "")
+        # date += "  "
+        # dateList = str(date).split(" ")
+        # dateList[1] = dictMonths.get(dateList[1])
+        # if dateList[2] == '':
+        #     dateList[2] = '01'
+        # date = ''.join(dateList)
+        # date = date.replace(" ", "")
         self.__datePublication = date
 
     def setAbout(self, about):
@@ -162,7 +171,7 @@ class pubmedEntry():
 
     def getSynonyms(self):
         # this returns a dict with as key the given geneid and as value the synonyms
-        return dictSynonyms
+        return self.dictSynonyms
 
     def setTitle(self, title):
         self.__title = title
@@ -170,7 +179,8 @@ class pubmedEntry():
     def getTitle(self):
         return self.__title
 
-# main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com")
+
+#main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
