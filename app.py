@@ -94,7 +94,7 @@ def results():
         full_dicy.update({"omim_id": omim_ids})
         full_dicy.update({"amount_found": recipe_data})
     # Embed the result in the html output.
-    return render_template("Searchpage_test.html", genedic=full_dicy, plot=plot_url)
+    return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url)
 
 
 def do_MATH_months(sourcedate, months):
