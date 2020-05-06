@@ -17,7 +17,6 @@ def main(searchList, geneList, email, searchDate, today):
     dictSynonyms = {}
     global mindate
     mindate = str(searchDate).replace("-", "/")
-    print(mindate)
     global maxdate
     maxdate = str(today).replace("-", "/")
     start = time.time()
@@ -30,7 +29,6 @@ def main(searchList, geneList, email, searchDate, today):
             # todo werp een exception op als dit gebeurt
     # I call a function to formulate a query
     searchTerm = makeQuery(searchList, geneList, dictSynonyms)
-    print(dictSynonyms)
     # I set the email
     Entrez.email = email
     maxResults = getAmountOfResults(searchTerm)
@@ -57,7 +55,6 @@ def makeQuery(searchList, geneList, dictsynonym):
     for gene in geneList:
         searchTerm = searchTerm.format(gene + " OR {}")
     searchTerm = searchTerm.replace("OR {}", "")
-    print(searchTerm)
     return searchTerm
 
 
@@ -105,7 +102,6 @@ def getAmountOfResults(searchTerm):
     for row in record["eGQueryResult"]:
         if row["DbName"] == "pubmed":
             maxResults = row["Count"]
-    print(maxResults)
     return maxResults
 
 
@@ -119,18 +115,56 @@ def getPubmedIDs(maxResults, searchTerm):
 
 
 def getPubmedArticlesByID(idList, searchTerm):
-    pubmedList = []
     handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
                            retmode="text")
     records = Medline.parse(handle)
     records = list(records)
+    entryOtDict = {}
     for record in records:
         print(record)
+        pubmedID = record.get("PMID")
         pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"), record.get("MH"))
         pubmedEntryInstance.setDatePublication(record.get("DP"))
         pubmedEntryInstance.setAbout(record.get("AB"))
         pubmedEntryInstance.setTitle(record.get("TI"))
+        pubmedEntryInstance.setOTTerms(record.get("OT"))
+        if not pubmedID in entryOtDict.keys():
+            entryOtDict[pubmedID] = {}
+            if record.get("OT"):
+                for term in record.get("OT"):
+                    entryOtDict[pubmedID][term] = []
+    pubmedEntryInstance.dictOtTerms = getOtSynonyms(entryOtDict)
+    
 
+def getOtSynonyms(entryOtDict):
+    try:
+        connection = mysql.connector.connect(
+            host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
+            db='rucia',
+            user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
+            password="kip")
+        if connection.is_connected():
+            db_Info = connection.get_server_info()
+            print("Connected to MySQL Server version ", db_Info)
+            cursor = connection.cursor()
+            cursor.execute("select synoniem, naam "
+                           "from clinical_synoniem join clinical_naam cs on clinical_synoniem.clinical_naam_naam = cs.naam;")
+            records = cursor.fetchall()
+    except Error as e:
+        print("Error while connecting to MySQL", e)
+    finally:
+        if (connection.is_connected()):
+            cursor.close()
+            connection.close()
+            print("MySQL connection is closed")
+    for record in records:
+        for value in entryOtDict.values():
+            for item in value:
+                if item == record[0]:
+                    value[item].append(record[1])
+                elif item == record[1]:
+                    value[item].append(record[0])
+    return entryOtDict
 
 class pubmedEntry():
     # The __ make this a private attribute to encapsule it
@@ -140,6 +174,7 @@ class pubmedEntry():
     __title = ""
     instancesList = []
     dictSynonyms = {}
+    dictOtTerms = {}
 
     def __init__(self, pubmedID, searchterm, author, mhTerms):
         self.pubmedID = pubmedID
@@ -179,6 +214,12 @@ class pubmedEntry():
     def getTitle(self):
         return self.__title
 
+    def setOTTerms(self, otTerms):
+        # todo look for synonyms
+        self.otTerms = otTerms
+
+    def getOTTerms(self):
+        return self.otTerms
 
 #main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com")
 # print(pubmedEntry.instancesList)
