@@ -68,7 +68,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <form class="w3-container" method="post" action="http://localhost:5000/result">
     <p>
     <label class="w3-text-black"><b>disease-characteristics</b></label>
-    <input class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
+    <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
     <p>
     <p>
     <label class="w3-text-black"><b>E-mail</b></label>
@@ -101,16 +101,23 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   </div>
     <div class="w3-container w3-section w3-theme-l1" >
         {% if plot != None %}
-        <img class="w3-margin" src="data:image/png;base64, {{ plot }}" alt="hi">
+        <img class="w3-margin" src="data:image/png;base64, {{ plot }}">
         {% endif %}
     </div>
-     {% for gene, ids in genedic.items()%}
+    {% if"articles" in genedic.keys() %}
+     {% for name, gene in genedic["articles"].items()%}
+
          <div class = "w3-card w3-white, w3-margin">
-             <button onclick="myFunction('{{ gene }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
-                 {{ gene }}</button>
-            <div id="{{ gene }}" class="w3-container w3-hide w3-border">
+         {% for omim_name, omim_id in genedic["omim_id"].items() %}
+             {% if name == omim_name %}
+             <a href="https://omim.org/entry/{{ omim_id }}">OMIM</a>
+             <button onclick="myFunction('{{ name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
+                 {{ name }} </button>
+            <div id="{{ name }}" class="w3-container w3-hide w3-border">
+             {% endif %}
+            {% endfor %}
               <ul class="w3-ul">
-                {% for genename , list in ids.items() %}
+                {% for genename , list in gene.items() %}
                     <li class="w3-theme-l1 w3-section"> <b>{{ genename }}</b> </li>
                     {% for item in list %}
                     <li><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}">{{ item.getTitle() }}</a></li>
@@ -120,6 +127,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
             </div>
          </div>
      {% endfor %}
+    {% endif %}
     </div>
 </div>
 
