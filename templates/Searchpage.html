@@ -10,7 +10,7 @@
 .w3-theme-blue {color:#fff !important;background-color: #bcccfe !important}
 
 .w3-theme-l3 {color:#000 !important; background-color: #cfdbfe !important}
-.w3-theme-l2 {color:#000 !important; background-color:#c0ebee !important}
+.w3-theme-l2 {color:#fff !important; background-color: #d5a4d4 !important}
 .w3-theme-l1 {color:#fff !important; background-color: #8a8aae !important}
 .w3-theme-l4-blue {color:#000 !important;background-color: #ffffff !important}
 .w3-theme-l3-purple {color:#000 !important; background-color:#e4c6e2 !important}
@@ -87,6 +87,9 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
       <option value="3">3 Months</option>
       <option value="6">6 Months</option>
       <option value="9">9 Months</option>
+      <option value="12">1 Year</option>
+      <option value="24">2 Years</option>
+
     </select>
     </p>
     <p>
@@ -110,10 +113,15 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
          <div class = "w3-card w3-white, w3-margin">
          {% for omim_name, omim_id in genedic["omim_id"].items() %}
              {% if name == omim_name %}
-             <a href="https://omim.org/entry/{{ omim_id }}">OMIM</a>
+
              <button onclick="myFunction('{{ name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
                  {{ name }} </button>
             <div id="{{ name }}" class="w3-container w3-hide w3-border">
+            <div class="w3-card">
+            <a href="https://omim.org/entry/{{ omim_id }}">
+            <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 33%">OMIM</button>
+            </a>
+            </div>
              {% endif %}
             {% endfor %}
               <ul class="w3-ul">
