@@ -16,7 +16,7 @@ def find_in_database(gene_list):
         big_string.append(string)
     biggest_string = "or ".join(big_string)
     print(biggest_string)
-    query = "select symbool, omimId from huidig_symbool where {}".format(biggest_string)
+    query = "select symbool, omimId,uniprotId, NCBIid from huidig_symbool where {}".format(biggest_string)
     print(query)
     try:
         connection = mysql.connector.connect(
@@ -33,12 +33,18 @@ def find_in_database(gene_list):
             for record in records:
                 record = list(record)
                 record[1] = record[1].strip("\n")
+                omim = record[1]
+                uni = record[2]
+                ncbi = record[3]
                 if record[1] != "":
-                    omim_id_dic.update({record[0]: record[1]})
+                    omim_id_dic[record[0]] = []
+                    omim_id_dic[record[0]].append(omim)
+                    omim_id_dic[record[0]].append(uni)
+                    omim_id_dic[record[0]].append(ncbi)
                     print(omim_id_dic)
                 else:
                     id_found = textmine_in_OMIM(record[0])
-                    omim_id_dic.update({record[0]: id_found})
+                    omim_id_dic.update({record[0]: [id_found]})
     except Error as e:
         print("Error while connecting to MySQL", e)
     finally:
@@ -63,5 +69,5 @@ def textmine_in_OMIM(term):
     return found_id
 
 
-#genelist = ["A12M1", "A1BG-AS1"]
-#find_in_database(genelist)
+genelist = ["A12M1", "A1BG-AS1","A1BG","A2ML1"]
+find_in_database(genelist)

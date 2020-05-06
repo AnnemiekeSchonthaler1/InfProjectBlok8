@@ -113,16 +113,20 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
          <div class = "w3-card w3-white, w3-margin">
          {% for omim_name, omim_id in genedic["omim_id"].items() %}
              {% if name == omim_name %}
-
              <button onclick="myFunction('{{ name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
                  {{ name }} </button>
             <div id="{{ name }}" class="w3-container w3-hide w3-border">
             <div class="w3-card">
-            {% if omim_id != "" %}
-            <a href="https://omim.org/entry/{{ omim_id }}">
-            <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 33%">OMIM</button>
+
+            <a href="https://omim.org/entry/{{ omim_id[0] }}">
+            <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">OMIM</button>
             </a>
-            {% endif %}
+            <a href="https://www.uniprot.org/uniprot/{{ omim_id[1] }}">
+            <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">UNIPROT</button>
+            </a>
+            <a href="https://www.ncbi.nlm.nih.gov/gene/{{ omim_id[2] }}">
+            <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">NCBI</button>
+            </a>
             </div>
              {% endif %}
             {% endfor %}
