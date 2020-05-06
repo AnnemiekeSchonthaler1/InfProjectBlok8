@@ -2,8 +2,10 @@ import mysql
 from bio import Entrez, Medline
 from mysql.connector import Error
 
+
 def main(gene_list):
     find_in_database(gene_list)
+
 
 def find_in_database(gene_list):
     omim_id_dic = {}
@@ -31,7 +33,12 @@ def find_in_database(gene_list):
             for record in records:
                 record = list(record)
                 record[1] = record[1].strip("\n")
-                omim_id_dic.update({record[0]: record[1]})
+                if record[1] != "":
+                    omim_id_dic.update({record[0]: record[1]})
+                    print(omim_id_dic)
+                else:
+                    id_found = textmine_in_OMIM(record[0])
+                    omim_id_dic.update({record[0]: id_found})
     except Error as e:
         print("Error while connecting to MySQL", e)
     finally:
@@ -41,17 +48,20 @@ def find_in_database(gene_list):
             print("MySQL connection is closed")
 
     return omim_id_dic
-def idk():
+
+
+def textmine_in_OMIM(term):
+    found_id = ""
     Entrez.email = 'A.N.Other@example.com'
-    handle = Entrez.esearch(db="omim", term="ATP8")
+    handle = Entrez.esearch(db="omim", term=term)
     record = Entrez.read(handle)
     handle.close()
     idlist = record["IdList"]
-    print(record)
-    return idlist
-
-def idk2(idList):
-    handle = Entrez.efetch(db="omim", id="617530", retmode="text")
-    print(handle.readline().strip())
+    print("idlist = ", idlist)
+    for item in idlist:
+        found_id = item
+    return found_id
 
 
+#genelist = ["A12M1", "A1BG-AS1"]
+#find_in_database(genelist)
