@@ -67,7 +67,7 @@ def results():
         plot_url = save_to_url(plt)
         # dictionary with synonyms for the searchterm?
         dict_of_terms = Pubmed.pubmedEntry.dictOtTerms
-        print(dict_of_terms)
+        print("dict of terms: ",dict_of_terms)
         # make a complete dictionary with all information
         full_dicy.update({"articles": gene_dic})
         full_dicy.update({"omim_id": omim_ids})
@@ -86,7 +86,8 @@ def save_to_url(plt):
     return plot_url
 
 
-def make_genedic_and_count(Synonymdict, recipe_data):
+def make_genedic_and_count(Synonymdict):
+    recipe_data = {}
     gene_dic = {}
     for gene, synonyms in Synonymdict.items():
         if gene != '':
