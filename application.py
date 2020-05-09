@@ -1,5 +1,5 @@
 from flask import Flask
-from Bio import Entrez
+#from Bio import Entrez
 app = Flask(__name__)
 
 @app.route("/")
