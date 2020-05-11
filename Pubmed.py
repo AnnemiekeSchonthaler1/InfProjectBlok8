@@ -4,11 +4,6 @@ import time
 import mysql.connector
 from mysql.connector import Error
 
-dictMonths = {'Jan': '/01/', 'Feb': '/02/', 'Mar': '/03/',
-              'Apr': '/04/', 'May': '/05/', 'Jun': '/06/',
-              'Jul': '/07/', 'Aug': '/08/', 'Sep': '/09/',
-              'Oct': '/10/', 'Nov': '/11/', 'Dec': '/12/',
-              '': '/01/'}
 mindate = "1990/01/01"
 maxdate = "2020/01/01"
 
@@ -133,8 +128,8 @@ def getPubmedArticlesByID(idList, searchTerm):
             if record.get("OT"):
                 for term in record.get("OT"):
                     entryOtDict[pubmedID][term] = []
-    pubmedEntryInstance.dictOtTerms = getOtSynonyms(entryOtDict)
-    
+    pubmedEntry.dictOtTerms = getOtSynonyms(entryOtDict)
+
 
 def getOtSynonyms(entryOtDict):
     try:
@@ -187,14 +182,6 @@ class pubmedEntry():
         self.__geneID = geneIDIncoming
 
     def setDatePublication(self, date):
-        # so it will split into at least 3 parts
-        # date += "  "
-        # dateList = str(date).split(" ")
-        # dateList[1] = dictMonths.get(dateList[1])
-        # if dateList[2] == '':
-        #     dateList[2] = '01'
-        # date = ''.join(dateList)
-        # date = date.replace(" ", "")
         self.__datePublication = date
 
     def setAbout(self, about):
