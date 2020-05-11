@@ -4,11 +4,12 @@ import time
 import mysql.connector
 from mysql.connector import Error
 
-mindate = "1990/01/01"
-maxdate = "2020/01/01"
+mindate = ""
+maxdate = ""
 
 
 def main(searchList, geneList, email, searchDate, today):
+    pubmedEntry.instancesList = []
     dictSynonyms = {}
     global mindate
     mindate = str(searchDate).replace("-", "/")
