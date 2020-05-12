@@ -3,9 +3,6 @@ import io
 import requests
 import sys
 import json as js
-from Bio import Entrez
-import xml.etree.ElementTree as ET
-import xml.dom.minidom
 
 
 def SubmitPMIDList(pub_list, Format, Bioconcept):
