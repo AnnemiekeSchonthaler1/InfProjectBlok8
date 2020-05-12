@@ -78,7 +78,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
         <p>
             <label>
             <textarea placeholder="Gene1 &#10;Gene2&#10;Gene3 &#10;etc.."
-                      name="gene_list" rows="3" cols="74.5"></textarea>
+                      name="gene_list"></textarea>
             </label>
         </p>
     <p>
@@ -118,13 +118,13 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
             <div id="{{ name }}" class="w3-container w3-hide w3-border">
             <div class="w3-card">
 
-            <a href="https://omim.org/entry/{{ omim_id[0] }}">
+            <a href="https://omim.org/entry/{{ omim_id[0] }}" target="_blank">
             <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">OMIM</button>
             </a>
-            <a href="https://www.uniprot.org/uniprot/{{ omim_id[1] }}">
+            <a href="https://www.uniprot.org/uniprot/{{ omim_id[1] }}" target="_blank">
             <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">UNIPROT</button>
             </a>
-            <a href="https://www.ncbi.nlm.nih.gov/gene/{{ omim_id[2] }}">
+            <a href="https://www.ncbi.nlm.nih.gov/gene/{{ omim_id[2] }}" target="_blank">
             <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">NCBI</button>
             </a>
             </div>
@@ -134,7 +134,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
                 {% for genename , list in gene.items() %}
                     <li class="w3-theme-l1 w3-section"> <b>{{ genename }}</b> </li>
                     {% for item in list %}
-                    <li><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}">{{ item.getTitle() }}</a></li>
+                    <li><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{ item.getTitle() }}</a></li>
                     {% endfor %}
                 {% endfor %}
               </ul>
