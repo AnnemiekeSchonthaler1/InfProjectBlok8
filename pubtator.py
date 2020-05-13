@@ -7,7 +7,6 @@ def SubmitPMIDList(pub_list, Format, Bioconcept):
     #
 
     json = {"pmids": [pmid for pmid in pub_list]}
-    print(json)
     #
     # load bioconcepts
     #
