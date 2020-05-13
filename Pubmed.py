@@ -3,7 +3,7 @@ from Bio import Medline
 import time
 import mysql.connector
 from mysql.connector import Error
-import puptator
+import pubtator
 import json
 
 mindate = ""
@@ -218,7 +218,7 @@ class pubmedEntry():
     def makeInfoML(self):
         if not self.pubmedID in self.MLinfo.keys():
             self.MLinfo[self.pubmedID] = {}
-            output = puptator.SubmitPMIDList([self.pubmedID],
+            output = pubtator.SubmitPMIDList([self.pubmedID],
                                              "biocjson",
                                              Bioconcept="gene, disease, chemical, species, proteinmutation, dnamutation")
             y = json.loads(output)
