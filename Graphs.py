@@ -1,5 +1,10 @@
+import base64
+from io import BytesIO
+
 import numpy as np
 import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+import csv
 
 def Graph(dictionary):
     recipe = []
@@ -29,3 +34,30 @@ def Graph(dictionary):
     ax.set_title("Amount of Articles found per Gene")
     return plt
 
+
+
+def save_to_url(plt):
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    plt.close()
+    img.seek(0)
+    plot_url = base64.b64encode(img.getvalue()).decode('utf8')
+    return plot_url
+
+def wordcloud(dictionary):
+    # {pubmedid:{type:[naam], type:[naam]}
+    text = ""
+    for dic in dictionary.values():
+        for naam in dic:
+            text = text + " " + naam
+
+    print(text)
+    wordcloud = WordCloud(background_color="white", width=480, height=480, colormap="plasma").generate(text)
+
+    # plot the WordCloud image
+    plt.figure()
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.margins(x=0, y=0)
+    URL = save_to_url(plt)
+    return URL
