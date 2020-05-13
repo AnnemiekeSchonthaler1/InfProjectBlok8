@@ -3,6 +3,8 @@ from Bio import Medline
 import time
 import mysql.connector
 from mysql.connector import Error
+import puptator
+import json
 
 mindate = ""
 maxdate = ""
@@ -124,6 +126,7 @@ def getPubmedArticlesByID(idList, searchTerm):
         pubmedEntryInstance.setAbout(record.get("AB"))
         pubmedEntryInstance.setTitle(record.get("TI"))
         pubmedEntryInstance.setOTTerms(record.get("OT"))
+        pubmedEntryInstance.getInfoML()
         if not pubmedID in entryOtDict.keys():
             entryOtDict[pubmedID] = {}
             if record.get("OT"):
@@ -162,6 +165,7 @@ def getOtSynonyms(entryOtDict):
                     value[item].append(record[0])
     return entryOtDict
 
+
 class pubmedEntry():
     # The __ make this a private attribute to encapsule it
     __geneID = ""
@@ -171,6 +175,7 @@ class pubmedEntry():
     instancesList = []
     dictSynonyms = {}
     dictOtTerms = {}
+    MLinfo = {}
 
     def __init__(self, pubmedID, searchterm, author, mhTerms):
         self.pubmedID = pubmedID
@@ -209,7 +214,25 @@ class pubmedEntry():
     def getOTTerms(self):
         return self.otTerms
 
-#main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com")
+    def getInfoML(self):
+        if not self.pubmedID in self.MLinfo.keys():
+            self.MLinfo[self.pubmedID] = {}
+            output = puptator.SubmitPMIDList([self.pubmedID],
+                                             "biocjson",
+                                             Bioconcept="gene, disease, chemical, species, proteinmutation, dnamutation")
+            y = json.loads(output)
+            for passage in y["passages"]:
+                for annotation in passage["annotations"]:
+                    name = annotation["text"]
+                    identifier = annotation["infons"]["identifier"]
+                    type = annotation["infons"]["type"]
+                    if not type in self.MLinfo[self.pubmedID].keys():
+                        self.MLinfo[self.pubmedID][type] = [{name: identifier}]
+                    else:
+                        self.MLinfo[self.pubmedID][type].append({name: identifier})
+        return self.MLinfo
+
+main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
