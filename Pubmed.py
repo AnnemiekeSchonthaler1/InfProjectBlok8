@@ -126,7 +126,8 @@ def getPubmedArticlesByID(idList, searchTerm):
         pubmedEntryInstance.setAbout(record.get("AB"))
         pubmedEntryInstance.setTitle(record.get("TI"))
         pubmedEntryInstance.setOTTerms(record.get("OT"))
-        pubmedEntryInstance.getInfoML()
+        # todo doe dit alleen als er om is gevraagd
+        pubmedEntryInstance.makeInfoML()
         if not pubmedID in entryOtDict.keys():
             entryOtDict[pubmedID] = {}
             if record.get("OT"):
@@ -214,7 +215,7 @@ class pubmedEntry():
     def getOTTerms(self):
         return self.otTerms
 
-    def getInfoML(self):
+    def makeInfoML(self):
         if not self.pubmedID in self.MLinfo.keys():
             self.MLinfo[self.pubmedID] = {}
             output = puptator.SubmitPMIDList([self.pubmedID],
@@ -230,9 +231,9 @@ class pubmedEntry():
                         self.MLinfo[self.pubmedID][type] = [{name: identifier}]
                     else:
                         self.MLinfo[self.pubmedID][type].append({name: identifier})
-        return self.MLinfo
 
-main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
+
+# main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
 # print(pubmedEntry.instancesList)
 # for item in pubmedEntry.instancesList:
 #     print(item.author)
