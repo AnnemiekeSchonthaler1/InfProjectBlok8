@@ -228,6 +228,3 @@ class pubmedEntry():
     def getTitle(self):
         return self.__title
 
-    def identifiers(self):
-        return
-
