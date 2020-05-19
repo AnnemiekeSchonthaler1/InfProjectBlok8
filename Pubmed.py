@@ -231,7 +231,3 @@ class pubmedEntry():
     def identifiers(self):
         return
 
-
-main(["Intellectual disability"], ["KAT6B", "KCNK18"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
-
-"KAT6B", "KCNK18"
