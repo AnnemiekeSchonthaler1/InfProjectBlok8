@@ -5,38 +5,57 @@ import mysql.connector
 from mysql.connector import Error
 import pubtator
 import json
+from datetime import datetime
 
+# I make a connection with the database
+# connection = mysql.connector.connect(
+#     host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
+#     db='rucia',
+#     user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
+#     password="kip")
+# cursor = connection.cursor()
+
+# I make the dates global
 mindate = ""
 maxdate = ""
 
 
 def main(searchList, geneList, email, searchDate, today):
-    pubmedEntry.instancesList = []
-    dictSynonyms = {}
-    global mindate
-    mindate = str(searchDate).replace("-", "/")
-    global maxdate
-    maxdate = str(today).replace("-", "/")
     start = time.time()
+
+    # I set the dates to the entered values
+    global mindate
+    global maxdate
+    mindate = str(searchDate).replace("-", "/")
+    maxdate = str(today).replace("-", "/")
+
+    # I set the email to the given email
+    Entrez.email = email
+
     # I add the genes to a dict to keep track of gene and synonym
+    dictSynonyms = {}
     for gene in geneList:
         if not gene in dictSynonyms.keys():
             dictSynonyms[gene] = []
-        else:
-            print("Waarom krijg ik dubbele wat is deze")
-            # todo werp een exception op als dit gebeurt
+
     # I call a function to formulate a query
+    # searchTerm contains this query
     searchTerm = makeQuery(searchList, geneList, dictSynonyms)
-    # I set the email
-    Entrez.email = email
+
+    # I look for articles with the formulated query
     maxResults = getAmountOfResults(searchTerm)
+    # Het maximale wat kan is 500.000
+    plafond = 5000
+    if int(maxResults) > plafond:
+        maxResults = plafond
     # There is no need to look for results if there aren't any
     if int(maxResults) != 0:
         idList = getPubmedIDs(maxResults, searchTerm)
-        if not len(idList) == 0:
-            getPubmedArticlesByID(idList, searchTerm)
-    pubmedEntry.dictSynonyms = dictSynonyms
-    print("Elapsed time: " + str((time.time() - start)))
+        # idList = idList[0:500]
+        ArticleInfoRetriever(idList, searchTerm)
+        # getPubmedArticlesByID(idList, searchTerm)
+
+    print("Dit duurt " + str(time.time() - start) + " secondes")
 
 
 def makeQuery(searchList, geneList, dictsynonym):
@@ -48,7 +67,7 @@ def makeQuery(searchList, geneList, dictsynonym):
     searchTerm = searchTerm.replace(" OR {}", "")
     searchTerm += " AND ({})"
 
-    geneList = findSynonyms(geneList, dictsynonym)
+    # geneList = findSynonyms(geneList, dictsynonym)
     # This code formulates a query
     for gene in geneList:
         searchTerm = searchTerm.format(gene + " OR {}")
@@ -59,15 +78,9 @@ def makeQuery(searchList, geneList, dictsynonym):
 # Deze functie breidt de genlijst uit met de synoniemen.
 def findSynonyms(geneList, dictSynonyms):
     try:
-        connection = mysql.connector.connect(
-            host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
-            db='rucia',
-            user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
-            password="kip")
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
-            cursor = connection.cursor()
             cursor.execute("select symbool, vorig_symbool "
                            "from huidig_symbool join vorig_symbool on (symbool=huidig_symbool_symbool);")
             records = cursor.fetchall()
@@ -109,7 +122,53 @@ def getPubmedIDs(maxResults, searchTerm):
     record = Entrez.read(handle)
     handle.close()
     idlist = record["IdList"]
+    print("got id's")
     return idlist
+
+
+def ArticleInfoRetriever(idList, searchTerm):
+    annotations = {}
+    idList = list(idList)
+    # Ik haal alle dubbele er uit
+    idList = set(idList)
+    idList = list(idList)
+    slice = 500
+    for i in range(slice, len(idList), slice):
+        # zodat de restgetallen mee kunnen worden genomen die niet meer in een slice passen
+        output = pubtator.SubmitPMIDList(idList[i - slice:i], "biocjson",
+                                         "gene, disease, chemical, species, proteinmutation, dnamutation")
+        articleInfoProcessor(output, searchTerm, annotations)
+    pubmedEntry.annotations = annotations
+
+
+def articleInfoProcessor(pubtatoroutput, searchTerm, annotations):
+    # todo stop dit allemaal in de database
+    if not len(pubtatoroutput) == 0:
+        for entry in pubtatoroutput.split("\n"):
+            # Hij mag niet leeg zijn want anders wordt json boos
+            if not len(entry) == 0:
+                y = json.loads(entry)
+                pubmedid = y["pmid"]
+                annotations[pubmedid] = {}
+                datePublished = y["created"]["$date"]
+                datePublished = datetime.fromtimestamp(datePublished / 1000.0)
+                author = y["authors"]
+                pubmedEntryInstance = pubmedEntry(pubmedid, searchTerm, author)
+                pubmedEntryInstance.setDatePublication(datePublished)
+                for passage in y["passages"]:
+                    if passage["infons"]["type"] == "title":
+                        pubmedEntryInstance.setTitle(passage["text"])
+                    elif passage["infons"]["type"] == "abstract":
+                        pubmedEntryInstance.setAbout(passage["text"])
+                    for annotation in passage["annotations"]:
+                        name = annotation["text"]
+                        identifier = annotation["infons"]["identifier"]
+                        type = annotation["infons"]["type"]
+                        if not type in annotations[pubmedid].keys():
+                            annotations[pubmedid][type] = [name]
+                        else:
+                            annotations[pubmedid][type].append(name)
+
 
 
 def getPubmedArticlesByID(idList, searchTerm):
@@ -120,69 +179,23 @@ def getPubmedArticlesByID(idList, searchTerm):
     entryOtDict = {}
     for record in records:
         print(record)
-        pubmedID = record.get("PMID")
-        pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"), record.get("MH"))
-        pubmedEntryInstance.setDatePublication(record.get("DP"))
-        pubmedEntryInstance.setAbout(record.get("AB"))
-        pubmedEntryInstance.setTitle(record.get("TI"))
-        pubmedEntryInstance.setOTTerms(record.get("OT"))
-        # todo doe dit alleen als er om is gevraagd
-        pubmedEntryInstance.makeInfoML()
-        if not pubmedID in entryOtDict.keys():
-            entryOtDict[pubmedID] = {}
-            if record.get("OT"):
-                for term in record.get("OT"):
-                    entryOtDict[pubmedID][term] = []
-    pubmedEntry.dictOtTerms = getOtSynonyms(entryOtDict)
-
-
-def getOtSynonyms(entryOtDict):
-    try:
-        connection = mysql.connector.connect(
-            host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
-            db='rucia',
-            user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
-            password="kip")
-        if connection.is_connected():
-            db_Info = connection.get_server_info()
-            print("Connected to MySQL Server version ", db_Info)
-            cursor = connection.cursor()
-            cursor.execute("select synoniem, naam "
-                           "from clinical_synoniem join clinical_naam cs on clinical_synoniem.clinical_naam_naam = cs.naam;")
-            records = cursor.fetchall()
-    except Error as e:
-        print("Error while connecting to MySQL", e)
-    finally:
-        if (connection.is_connected()):
-            cursor.close()
-            connection.close()
-            print("MySQL connection is closed")
-    for record in records:
-        for value in entryOtDict.values():
-            for item in value:
-                if item == record[0]:
-                    value[item].append(record[1])
-                elif item == record[1]:
-                    value[item].append(record[0])
-    return entryOtDict
 
 
 class pubmedEntry():
-    # The __ make this a private attribute to encapsule it
+    # The __ make this a private attribute to encapsulate it
     __geneID = ""
     __datePublication = 0
     __about = ""
     __title = ""
+    annotations = []
     instancesList = []
     dictSynonyms = {}
-    dictOtTerms = {}
     MLinfo = {}
 
-    def __init__(self, pubmedID, searchterm, author, mhTerms):
+    def __init__(self, pubmedID, searchterm, author):
         self.pubmedID = pubmedID
         self.searchTerm = searchterm
         self.author = author
-        self.mhTerms = mhTerms
         pubmedEntry.instancesList.append(self)
 
     def setGeneID(self, geneIDIncoming):
@@ -208,32 +221,6 @@ class pubmedEntry():
     def getTitle(self):
         return self.__title
 
-    def setOTTerms(self, otTerms):
-        # todo look for synonyms
-        self.otTerms = otTerms
+    def identifiers(self):
+        return
 
-    def getOTTerms(self):
-        return self.otTerms
-
-    def makeInfoML(self):
-        if not self.pubmedID in self.MLinfo.keys():
-            self.MLinfo[self.pubmedID] = {}
-            output = pubtator.SubmitPMIDList([self.pubmedID],
-                                             "biocjson",
-                                             Bioconcept="gene, disease, chemical, species, proteinmutation, dnamutation")
-            y = json.loads(output)
-            for passage in y["passages"]:
-                for annotation in passage["annotations"]:
-                    name = annotation["text"]
-                    identifier = annotation["infons"]["identifier"]
-                    type = annotation["infons"]["type"]
-                    if not type in self.MLinfo[self.pubmedID].keys():
-                        self.MLinfo[self.pubmedID][type] = [{name: identifier}]
-                    else:
-                        self.MLinfo[self.pubmedID][type].append({name: identifier})
-
-
-# main("Homo sapiens", ["ATP8", "A2ML1"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
-# print(pubmedEntry.instancesList)
-# for item in pubmedEntry.instancesList:
-#     print(item.author)
