@@ -20,4 +20,4 @@ def SubmitPMIDList(pub_list, Format, Bioconcept):
     if r.status_code != 200:
         print("[Error]: HTTP code " + str(r.status_code))
     else:
-        return r.text.encode("utf-8")
+        return r.text
