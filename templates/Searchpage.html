@@ -65,7 +65,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <div class="w3-container w3-theme-l3-darkpurple">
     <h2>Search </h2>
   </div>
-  <form class="w3-container" method="post" action="https://hannl-hlo-bi2a1-app.azurewebsites.net/result">
+  <form class="w3-container" method="post" action="http://localhost:5000/result">
     <p>
     <label class="w3-text-black"><b>disease-characteristics</b></label>
     <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
@@ -78,7 +78,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
         <p>
             <label>
             <textarea placeholder="Gene1 &#10;Gene2&#10;Gene3 &#10;etc.."
-                      name="gene_list"></textarea>
+                      name="gene_list" style="width: 100%"></textarea>
             </label>
         </p>
     <p>
@@ -111,30 +111,31 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
      {% for name, gene in genedic["articles"].items()%}
 
          <div class = "w3-card w3-white, w3-margin">
-         {% for omim_name, omim_id in genedic["omim_id"].items() %}
-             {% if name == omim_name %}
-             <button onclick="myFunction('{{ name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
+         {%for omim_name, omim_id in genedic["omim_id"].items() %}
+             {%if name == omim_name %}
+             <button onclick="myFunction('{{name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
                  {{ name }} </button>
-            <div id="{{ name }}" class="w3-container w3-hide w3-border">
+            <div id="{{name }}" class="w3-container w3-hide w3-border">
             <div class="w3-card">
 
-            <a href="https://omim.org/entry/{{ omim_id[0] }}" target="_blank">
+            <a href="https://omim.org/entry/{{omim_id[0] }}"  target="_blank">
             <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">OMIM</button>
             </a>
-            <a href="https://www.uniprot.org/uniprot/{{ omim_id[1] }}" target="_blank">
+            <a href="https://www.uniprot.org/uniprot/{{omim_id[1] }}"  target="_blank">
             <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">UNIPROT</button>
             </a>
-            <a href="https://www.ncbi.nlm.nih.gov/gene/{{ omim_id[2] }}" target="_blank">
+            <a href="https://www.ncbi.nlm.nih.gov/gene/{{omim_id[2] }}"  target="_blank">
             <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">NCBI</button>
             </a>
             </div>
-             {% endif %}
-            {% endfor %}
+              {%endif %}
+        {%endfor %}
               <ul class="w3-ul">
                 {% for genename , list in gene.items() %}
                     <li class="w3-theme-l1 w3-section"> <b>{{ genename }}</b> </li>
                     {% for item in list %}
-                    <li><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{ item.getTitle() }}</a></li>
+                    <li><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}"  target="_blank">{{ item.getTitle() }}</a>
+                        <button onclick="document.getElementById({{ item.pubmedID }}).style.display='block'" class="w3-button w3-theme-l3-darkpurple w3-right-align">more info</button></li>
                     {% endfor %}
                 {% endfor %}
               </ul>
@@ -143,6 +144,36 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
      {% endfor %}
     {% endif %}
     </div>
+{% for id, dic in infodic.items() %}
+    <div id={{ id }} class="w3-modal" >
+    <div class="w3-modal-content" style="width: 50%">
+      <div class="w3-container">
+        <span onclick="document.getElementById('{{ id }}').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+        <!-- Code for modal in here-->
+          <div class="w3-container w3-theme-l1 w3-section">
+          <p> TITLE OF ARTICLE </p>
+          </div>
+          <iframe class="w3-margin-64" src="https://www.ncbi.nlm.nih.gov/pubmed/?term={{id}}" style="width: 100%"></iframe>
+          <div class="w3-cell-row" style="width:100%">
+          <div class="w3-container w3-cell w3-border">
+          {% for name, list in dic.items()%}
+            <button onclick="myFunction('{{ id+name }}')" class="w3-button w3-block w3-left-align w3-border w3-theme-l1 w3-margin-top">
+            {{ name }}</button>
+            <div id="{{ id+name }}" class="w3-container w3-hide">
+                {% for value in list %}
+                <p class="w3-white">{{ value }}</p>
+                {% endfor %}
+            </div>
+          {% endfor %}
+      </div>
+      <div class="w3-container w3-cell-middle w3-border">
+          <img class="w3-margin" src="data:image/png;base64, {{ url_dic[id] }}">
+      </div>
+          </div>
+      </div>
+    </div>
+  </div>
+{% endfor %}
 </div>
 
 <script>

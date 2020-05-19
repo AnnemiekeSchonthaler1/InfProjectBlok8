@@ -1,5 +1,4 @@
-from Bio import Entrez
-from Bio import Medline
+from bio import Entrez, Medline
 import time
 import mysql.connector
 from mysql.connector import Error
@@ -37,7 +36,6 @@ def main(searchList, geneList, email, searchDate, today):
     for gene in geneList:
         if not gene in dictSynonyms.keys():
             dictSynonyms[gene] = []
-
     # I call a function to formulate a query
     # searchTerm contains this query
     searchTerm = makeQuery(searchList, geneList, dictSynonyms)
@@ -54,7 +52,6 @@ def main(searchList, geneList, email, searchDate, today):
         # idList = idList[0:500]
         ArticleInfoRetriever(idList, searchTerm)
         # getPubmedArticlesByID(idList, searchTerm)
-
     print("Dit duurt " + str(time.time() - start) + " secondes")
 
 
@@ -78,6 +75,7 @@ def makeQuery(searchList, geneList, dictsynonym):
 
 # Deze functie breidt de genlijst uit met de synoniemen.
 def findSynonyms(geneList, dictSynonyms):
+    records = ""
     try:
         if connection.is_connected():
             db_Info = connection.get_server_info()
@@ -95,10 +93,11 @@ def findSynonyms(geneList, dictSynonyms):
     synonyms = []
     for record in records:
         if record[0] in geneList:
-            if not record[1] in synonyms and not record[1] == "":
+            if record[1] not in synonyms and not record[1] == "":
                 geneList.append(record[1])
                 dictSynonyms.get(str(record[0])).append(record[1])
             synonyms.append(record[1])
+    pubmedEntry.dictSynonyms = dictSynonyms
     return geneList
 
 
@@ -157,6 +156,7 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, annotations):
             if not len(entry) == 0:
                 y = json.loads(entry)
                 pubmedid = y["pmid"]
+                pubmedid = str(pubmedid)
                 annotations[pubmedid] = {}
                 datePublished = y["created"]["$date"]
                 datePublished = datetime.fromtimestamp(datePublished / 1000.0)
@@ -198,9 +198,10 @@ class pubmedEntry():
     instancesList = []
     dictSynonyms = {}
     MLinfo = {}
+    ML_single = {}
 
     def __init__(self, pubmedID, searchterm, author):
-        self.pubmedID = pubmedID
+        self.pubmedID = str(pubmedID)
         self.searchTerm = searchterm
         self.author = author
         pubmedEntry.instancesList.append(self)
@@ -214,6 +215,9 @@ class pubmedEntry():
     def setAbout(self, about):
         if about is not None:
             self.__about = about
+    def setMLinfo(self):
+        self.MLinfo = self.annotations[self.pubmedID]
+
 
     def getAbout(self):
         return self.__about
@@ -228,3 +232,7 @@ class pubmedEntry():
     def getTitle(self):
         return self.__title
 
+    def identifiers(self):
+        return
+
+#main("Developmental delay", ["CHD8"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
