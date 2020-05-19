@@ -8,12 +8,12 @@ import json
 from datetime import datetime
 
 # I make a connection with the database
-# connection = mysql.connector.connect(
-#     host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
-#     db='rucia',
-#     user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
-#     password="kip")
-# cursor = connection.cursor()
+connection = mysql.connector.connect(
+    host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
+    db='rucia',
+    user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
+    password="kip")
+cursor = connection.cursor()
 
 # I make the dates global
 mindate = ""
@@ -45,7 +45,7 @@ def main(searchList, geneList, email, searchDate, today):
     # I look for articles with the formulated query
     maxResults = getAmountOfResults(searchTerm)
     # Het maximale wat kan is 500.000
-    plafond = 5000
+    plafond = 500000
     if int(maxResults) > plafond:
         maxResults = plafond
     # There is no need to look for results if there aren't any
@@ -72,6 +72,7 @@ def makeQuery(searchList, geneList, dictsynonym):
     for gene in geneList:
         searchTerm = searchTerm.format(gene + " OR {}")
     searchTerm = searchTerm.replace("OR {}", "")
+    searchTerm = searchTerm.replace("AND {}", "")
     return searchTerm
 
 
@@ -133,14 +134,21 @@ def ArticleInfoRetriever(idList, searchTerm):
     idList = set(idList)
     idList = list(idList)
     slice = 500
-    for i in range(slice, len(idList), slice):
-        # zodat de restgetallen mee kunnen worden genomen die niet meer in een slice passen
-        output = pubtator.SubmitPMIDList(idList[i - slice:i], "biocjson",
+    if len(idList) > slice:
+        for i in range(slice, len(idList), slice):
+            # zodat de restgetallen mee kunnen worden genomen die niet meer in een slice passen
+            output = pubtator.SubmitPMIDList(idList[i - slice:i], "biocjson",
+                                             "gene, disease, chemical, species, proteinmutation, dnamutation")
+            articleInfoProcessor(output, searchTerm, annotations)
+    else:
+        output = pubtator.SubmitPMIDList(idList, "biocjson",
                                          "gene, disease, chemical, species, proteinmutation, dnamutation")
         articleInfoProcessor(output, searchTerm, annotations)
     pubmedEntry.annotations = annotations
+    print(annotations)
 
 
+# Deze functie haalt de nodige informatie uit het json file
 def articleInfoProcessor(pubtatoroutput, searchTerm, annotations):
     # todo stop dit allemaal in de database
     if not len(pubtatoroutput) == 0:
@@ -168,7 +176,6 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, annotations):
                             annotations[pubmedid][type] = [name]
                         else:
                             annotations[pubmedid][type].append(name)
-
 
 
 def getPubmedArticlesByID(idList, searchTerm):
@@ -224,3 +231,7 @@ class pubmedEntry():
     def identifiers(self):
         return
 
+
+main(["Intellectual disability"], ["KAT6B", "KCNK18"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
+
+"KAT6B", "KCNK18"
