@@ -45,7 +45,7 @@ def main(searchList, geneList, email, searchDate, today):
     # I look for articles with the formulated query
     maxResults = getAmountOfResults(searchTerm)
     # Het maximale wat kan is 500.000
-    plafond = 500000
+    plafond = 5000
     if int(maxResults) > plafond:
         maxResults = plafond
     # There is no need to look for results if there aren't any
