@@ -67,7 +67,7 @@ def makeQuery(searchList, geneList, dictsynonym):
     searchTerm = searchTerm.replace(" OR {}", "")
     searchTerm += " AND ({})"
 
-    # geneList = findSynonyms(geneList, dictsynonym)
+    geneList = findSynonyms(geneList, dictsynonym)
     # This code formulates a query
     for gene in geneList:
         searchTerm = searchTerm.format(gene + " OR {}")
