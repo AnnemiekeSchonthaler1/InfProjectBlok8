@@ -1,5 +1,5 @@
 import mysql
-from Bio import Entrez, Medline
+from bio import Entrez, Medline
 from mysql.connector import Error
 
 
@@ -11,6 +11,8 @@ def find_in_database(gene_list):
     omim_id_dic = {}
     big_string = []
     biggest_string = ""
+    connection = ""
+    cursor = ""
     for gene in gene_list:
         string = "symbool like '{}' ".format(gene)
         big_string.append(string)
@@ -41,7 +43,7 @@ def find_in_database(gene_list):
                     omim_id_dic[record[0]].append(omim)
                     omim_id_dic[record[0]].append(uni)
                     omim_id_dic[record[0]].append(ncbi)
-                    print(omim_id_dic)
+                    #print(omim_id_dic)
                 else:
                     id_found = textmine_in_OMIM(record[0])
                     omim_id_dic.update({record[0]: [id_found]})
@@ -63,11 +65,8 @@ def textmine_in_OMIM(term):
     record = Entrez.read(handle)
     handle.close()
     idlist = record["IdList"]
-    print("idlist = ", idlist)
+    #print("idlist = ", idlist)
     for item in idlist:
         found_id = item
     return found_id
 
-
-genelist = ["A12M1", "A1BG-AS1","A1BG","A2ML1"]
-find_in_database(genelist)

@@ -9,6 +9,7 @@ import datetime
 import Omim
 import Pubmed
 import Graphs
+from collections import Counter
 
 app = Flask(__name__)
 
@@ -30,6 +31,7 @@ def results():
     gene_list = []  # miss anders opslaan ligt aan hoe we dit later gaan gebruiken
     mail = ""
     search_date = ""
+    wordcloud_cutoff = ""
     plot_url = ""
     search_list = []
     URL_dic = {}
@@ -59,35 +61,69 @@ def results():
                     thing = thing.strip(" ")
                     if thing != " " and thing != "":
                         gene_list.append(thing)
-        print(gene_list, disease_char, mail)
+            elif key == "wordcloud_cutoff":
+
+                if key is not "" or key is not "all":
+                    wordcloud_cutoff = value
+                else:
+                    wordcloud_cutoff = 500000
+                print(wordcloud_cutoff)
+
+        print("hi ik roep pubmed nu aan")
         Pubmed.main(searchList=search_list, geneList=gene_list, email=mail, searchDate=search_date, today=today)
+        print("ik haal nu de annotaties op")
+        infodic = Pubmed.pubmedEntry.allAnnotations
+        if len(gene_list) == 0:
+            print("ik ga nu een genlijst maken want die had je niet")
+            for id, dictionary in infodic.items():
+                if 'Gene' in dictionary.keys():
+                    common = most_frequent(dictionary['Gene'])
+                    if common not in gene_list:
+                        gene_list.append(common)
+
+        print("hiii ga nu ff in database omim ids enzo zoeken")
         omim_ids = Omim.find_in_database(gene_list=gene_list)
         # get a complete list of gene names
+        print("ik haal ook ff het synoniemen dictionary op")
         Synonymdict = Pubmed.pubmedEntry.dictSynonyms
-        print("uhm im a synonym dict: ",Synonymdict)
+        if len(Synonymdict) == 0:
+            Synonymdict = gene_list
         # make a dictionary to save the counts and the articles per gene
+        print("hmmm we gaan nu ff door met een counter en het genedic in elkaar zetten")
         gene_dic, recipe_data = make_genedic_and_count(Synonymdict)
 
         # make the graph of amount of results per gene found mmmmmm donut
+        print("we maken nu een grafiek van de count data")
         plt = Graphs.Graph(recipe_data)
+        print("we saven de grafiek")
         plot_url = save_to_url(plt)
-        infodic = Pubmed.pubmedEntry.annotations
-        for item in Pubmed.pubmedEntry.instancesList:
-            url = Graphs.wordcloud(item.MLinfo)
-            URL_dic.update({item.pubmedID: url})
-            for key, value in item.MLinfo.items():
-                infodic[item.pubmedID][key] = set(value)
-        print("url dic", URL_dic)
-        print("info dic ", infodic)
+        print("were making graphs now... this might take a while")
+        current = len(Pubmed.pubmedEntry.instancesDict)
+        length = len(Pubmed.pubmedEntry.instancesDict)
+        if int(length) <= int(wordcloud_cutoff):
+            print("ik heb besloten om wordclouds te maken vandaag")
+            for item in Pubmed.pubmedEntry.instancesDict.values():
+                current = current - 1
+                print(current, "to gaan!!!")
+                if len(item.getMlinfo()) != 0:
+                    url = Graphs.wordcloud(item.getMlinfo())
+                    URL_dic.update({item.pubmedID: url})
+        print("ik ben klaar met wordclouds maken :(")
         # dictionary with synonyms for the searchterm?
         # make a complete dictionary with all information
+        print("ik maak nu een compleet dictionary met alle inforamatie enzo")
         full_dicy.update({"articles": gene_dic})
         full_dicy.update({"omim_id": omim_ids})
         full_dicy.update({"amount_found": recipe_data})
-
+        print("volledig dicy ", full_dicy)
     # Embed the result in the html output.
+        print("genereer pagina nu maar... hopelijk")
     return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic)
 
+
+def most_frequent(List):
+    occurence_count = Counter(List)
+    return occurence_count.most_common(1)[0][0]
 
 def save_to_url(plt):
     img = BytesIO()
@@ -99,34 +135,44 @@ def save_to_url(plt):
 
 
 def make_genedic_and_count(Synonymdict):
+
     #{gene : count}
     recipe_data = {}
     #{gene : {gene: [article_entery,...], synonym_of_Gene : [article entery]} gene : {gene: []}
-    annotation_dic = Pubmed.pubmedEntry.annotations
-    for item in Pubmed.pubmedEntry.instancesList:
-        item.setMLinfo()
-
+    annotation_dic = Pubmed.pubmedEntry.allAnnotations
+    print("im generating the empty gene_dic")
     gene_dic = {}
-    for gene, synonyms in Synonymdict.items():
-        if gene != '':
+    if type(Synonymdict) is list:
+        for gene in Synonymdict:
             gene_dic.update({gene: {gene: []}})
-            for s in synonyms:
-                if s != '':
-                    gene_dic[gene][s] = []
+    else:
+        for gene, synonyms in Synonymdict.items():
+            if gene != '':
+                gene_dic.update({gene: {gene: []}})
+                for s in synonyms:
+                    if s != '':
+                        gene_dic[gene][s] = []
+    print("im starting with filling the gene_dic")
+    for item in Pubmed.pubmedEntry.instancesDict.values():
+        MLinfo = item.getMlinfo()
 
-    for item in Pubmed.pubmedEntry.instancesList:
         for dic in gene_dic.values():
             for gene in dic.keys():
-                if gene in item.MLinfo['Gene']:
-                    gene_dic[gene][gene].append(item)
-                    if gene in recipe_data:
-                        recipe_data[gene] += 1
-                    else:
-                        recipe_data.update({gene: 1})
+                for dictionary in MLinfo.values():
+                    if 'Gene' in dictionary.keys():
+                        if gene in dictionary['Gene']:
+                            if item not in gene_dic[gene][gene]:
+                                gene_dic[gene][gene].append(item)
+                                if gene in recipe_data:
+                                    recipe_data[gene] += 1
+                                else:
+                                    recipe_data.update({gene: 1})
+
     return gene_dic, recipe_data
 
 
 def do_MATH_months(sourcedate, months):
+    print("ik bereken ff wat voor tijd het dan moet zijn voor de zoek opdracht")
     month = sourcedate.month - 1 + months
     year = sourcedate.year + month // 12
     month = month % 12 + 1

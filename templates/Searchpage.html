@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<title>PUBMED SEARCH</title>
+<title>W3.CSS Template</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
@@ -12,7 +12,7 @@
 .w3-theme-l3 {color:#000 !important; background-color: #cfdbfe !important}
 .w3-theme-l2 {color:#fff !important; background-color: #d5a4d4 !important}
 .w3-theme-l1 {color:#fff !important; background-color: #8a8aae !important}
-.w3-theme-l4-blue {color:#000 !important;background-color: #ffffff !important}
+.w3-light {color:#000 !important;background-color: #ffffff !important}
 .w3-theme-l3-purple {color:#000 !important; background-color:#e4c6e2 !important}
 .w3-theme-l3-darkpurple {color:#fff !important; background-color:#2c2c55 !important}
 
@@ -65,7 +65,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <div class="w3-container w3-theme-l3-darkpurple">
     <h2>Search </h2>
   </div>
-  <form class="w3-container" method="post" action="https://hannl-hlo-bi2a1-app.azurewebsites.net/result">
+  <form class="w3-container" method="post" action="http://localhost:5000/result">
     <p>
     <label class="w3-text-black"><b>disease-characteristics</b></label>
     <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
@@ -81,17 +81,37 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
                       name="gene_list" style="width: 100%"></textarea>
             </label>
         </p>
-    <p>
-    <select class="w3-select w3-section" name="publication_date">
+    <div class="w3-row-padding">
+        <div class="w3-third">
+    <select class="w3-select w3-section w3-cell" name="publication_date">
       <option value="" disabled selected>Choose max publication date</option>
       <option value="3">3 Months</option>
       <option value="6">6 Months</option>
       <option value="9">9 Months</option>
       <option value="12">1 Year</option>
       <option value="24">2 Years</option>
-
     </select>
-    </p>
+        </div>
+        <div class="w3-third">
+        <select class="w3-select w3-section w3-cell" name="wordcloud_cutoff" required>
+            <option value="" disabled selected>Choose Wordcloud cut-off</option>
+            <option value=50>50 (time indication: 0,8 s)</option>
+            <option value=100>100 (time indication: 1,7 m)</option>
+            <option value=200>200 (time indication: 3,4 m)</option>
+            <option value=300>300 (time indication: 5,0 m)</option>
+            <option value=400>400 (time indication: 6,6 m)</option>
+            <option value=500>500 (time indication: 8,3 m)</option>
+            <option value=750>750 (time indication: 12,5 m)</option>
+            <option value=1000>1000 (time indication: 16,0 m)</option>
+            <option value=1500>1500 (time indication: 25,0 m)</option>
+            <option value=2000>2000 (time indication: 33,0 m)</option>
+            <option value=3000>3000 (time indication: 50,0 m)</option>
+            <option value=4000>4000 (time indication: 1h 6 m)</option>
+            <option value=5000>5000 (time indication: 1h 38 m)</option>
+            <option value="all"> i have all the time</option>
+        </select>
+        </div>
+    </div>
     <p>
     <button class="w3-btn w3-theme-l3-darkpurple w3-text-white">Search</button></p>
   </form>
@@ -111,11 +131,13 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
      {% for name, gene in genedic["articles"].items()%}
 
          <div class = "w3-card w3-white, w3-margin">
-         {%for omim_name, omim_id in genedic["omim_id"].items() %}
-             {%if name == omim_name %}
+
+
              <button onclick="myFunction('{{name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
                  {{ name }} </button>
             <div id="{{name }}" class="w3-container w3-hide w3-border">
+        {%for omim_name, omim_id in genedic["omim_id"].items() %}
+        {%if name == omim_name %}
             <div class="w3-card">
 
             <a href="https://omim.org/entry/{{omim_id[0] }}"  target="_blank">
@@ -134,8 +156,12 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
                 {% for genename , list in gene.items() %}
                     <li class="w3-theme-l1 w3-section"> <b>{{ genename }}</b> </li>
                     {% for item in list %}
-                    <li><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}"  target="_blank">{{ item.getTitle() }}</a>
-                        <button onclick="document.getElementById({{ item.pubmedID }}).style.display='block'" class="w3-button w3-theme-l3-darkpurple w3-right-align">more info</button></li>
+                        <li>
+                        <div class="w3-bar w3-light">
+                            <div class=" w3-button w3-left"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{item.getTitle()}}</a></div>
+                        <div class=" w3-button w3-right w3-border " onclick="document.getElementById({{ item.pubmedID }}).style.display='block'"> more info</div>
+                        </div>
+                        </li>
                     {% endfor %}
                 {% endfor %}
               </ul>
@@ -144,6 +170,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
      {% endfor %}
     {% endif %}
     </div>
+
 {% for id, dic in infodic.items() %}
     <div id={{ id }} class="w3-modal" >
     <div class="w3-modal-content" style="width: 50%">
@@ -157,6 +184,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
           <div class="w3-cell-row" style="width:100%">
           <div class="w3-container w3-cell w3-border">
           {% for name, list in dic.items()%}
+              {% if name != id %}
             <button onclick="myFunction('{{ id+name }}')" class="w3-button w3-block w3-left-align w3-border w3-theme-l1 w3-margin-top">
             {{ name }}</button>
             <div id="{{ id+name }}" class="w3-container w3-hide">
@@ -164,10 +192,15 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
                 <p class="w3-white">{{ value }}</p>
                 {% endfor %}
             </div>
+              {% endif %}
           {% endfor %}
       </div>
       <div class="w3-container w3-cell-middle w3-border">
+          {% if id in url_dic.keys() %}
           <img class="w3-margin" src="data:image/png;base64, {{ url_dic[id] }}">
+              {% else %}
+                <p> no wordcloud was made</p>
+          {% endif %}
       </div>
           </div>
       </div>
