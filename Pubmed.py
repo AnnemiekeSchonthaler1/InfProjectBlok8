@@ -44,7 +44,7 @@ def main(searchList, geneList, email, searchDate, today):
     # I look for articles with the formulated query
     maxResults = getAmountOfResults(searchTerm)
     # Het maximale wat kan is 500.000
-    plafond = 5000
+    plafond = 500
     if int(maxResults) > plafond:
         maxResults = plafond
     # There is no need to look for results if there aren't any
@@ -52,7 +52,7 @@ def main(searchList, geneList, email, searchDate, today):
         idList = getPubmedIDs(maxResults, searchTerm)
         # idList = idList[0:500]
         ArticleInfoRetriever(idList, searchTerm)
-        # getPubmedArticlesByID(idList, searchTerm)
+    calculateScores()
     print("Dit duurt " + str(time.time() - start) + " secondes")
 
 
@@ -151,14 +151,15 @@ def ArticleInfoRetriever(idList, searchTerm):
     allAnnotationIds = set(allAnnotations.keys())
     remainingIds = remainingIds.difference(allAnnotationIds)
     getPubmedArticlesByID(list(remainingIds), searchTerm)
+    print(allAnnotations)
 
 
 # Deze functie haalt de nodige informatie uit het json file
 def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
-    annotations = {}
     # todo stop dit allemaal in de database
     if not len(pubtatoroutput) == 0:
         for entry in pubtatoroutput.split("\n"):
+            annotations = {}
             # Hij mag niet leeg zijn want anders wordt json boos
             if not len(entry) == 0:
                 y = json.loads(entry)
@@ -189,9 +190,18 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
                         else:
                             allAnnotations[pubmedid][type].append(name)
                 pubmedEntryInstance.setMLinfo(annotations)
+                pubmedEntryInstance.usedPubtator()
+
+
+def calculateScores():
+    for key, value in pubmedEntry.instancesDict.items():
+        id = key
+        if value.getPubtatorStatus():
+            print(key, value.getDatePublication())
 
 
 def getPubmedArticlesByID(idList, searchTerm):
+    print(idList)
     handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
                            retmode="text")
     records = Medline.parse(handle)
@@ -209,6 +219,7 @@ class pubmedEntry():
     __datePublication = 0
     __about = ""
     __title = ""
+    __withPubtator = False
     instancesDict = {}
     dictSynonyms = {}
     __MLinfo = {}
@@ -226,6 +237,9 @@ class pubmedEntry():
 
     def setDatePublication(self, date):
         self.__datePublication = date
+
+    def getDatePublication(self):
+        return self.__datePublication
 
     def setAbout(self, about):
         if about is not None:
@@ -250,8 +264,11 @@ class pubmedEntry():
     def getTitle(self):
         return self.__title
 
-    def identifiers(self):
-        return
+    def usedPubtator(self):
+        self.__withPubtator = True
+
+    def getPubtatorStatus(self):
+        return self.__withPubtator
 
 
-# main("Developmental delay", [], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
+main("Developmental delay", [], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
