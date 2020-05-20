@@ -139,11 +139,13 @@ def ArticleInfoRetriever(idList, searchTerm):
         for i in range(slice, len(idList), slice):
             output = pubtator.SubmitPMIDList(idList[i - slice:i], "biocjson",
                                              "gene, disease, chemical, species, proteinmutation, dnamutation")
-            articleInfoProcessor(output, searchTerm, allAnnotations)
+            if not output is None:
+                articleInfoProcessor(output, searchTerm, allAnnotations)
     else:
         output = pubtator.SubmitPMIDList(idList, "biocjson",
                                          "gene, disease, chemical, species, proteinmutation, dnamutation")
-        articleInfoProcessor(output, searchTerm, allAnnotations)
+        if not output is None:
+            articleInfoProcessor(output, searchTerm, allAnnotations)
 
     pubmedEntry.allAnnotations = allAnnotations
     allAnnotationIds = set(allAnnotations.keys())
