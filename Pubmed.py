@@ -39,12 +39,12 @@ def main(searchList, geneList, email, searchDate, today):
             dictSynonyms[gene] = []
     # I call a function to formulate a query
     # searchTerm contains this query
-    searchTerm = makeQuery(searchList, geneList, dictSynonyms)
+    searchTerm, geneList = makeQuery(searchList, geneList, dictSynonyms)
 
     # I look for articles with the formulated query
     maxResults = getAmountOfResults(searchTerm)
     # Het maximale wat kan is 500.000
-    plafond = 500
+    plafond = 5000
     if int(maxResults) > plafond:
         maxResults = plafond
     # There is no need to look for results if there aren't any
@@ -52,7 +52,7 @@ def main(searchList, geneList, email, searchDate, today):
         idList = getPubmedIDs(maxResults, searchTerm)
         # idList = idList[0:500]
         ArticleInfoRetriever(idList, searchTerm)
-    calculateScores()
+    #calculateScores(searchList, geneList)
     print("Dit duurt " + str(time.time() - start) + " secondes")
 
 
@@ -71,7 +71,7 @@ def makeQuery(searchList, geneList, dictsynonym):
         searchTerm = searchTerm.format(gene + " OR {}")
     searchTerm = searchTerm.replace("OR {}", "")
     searchTerm = searchTerm.replace("AND {}", "")
-    return searchTerm
+    return searchTerm, geneList
 
 
 # Deze functie breidt de genlijst uit met de synoniemen.
@@ -188,20 +188,13 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
                         if not type in allAnnotations[pubmedid].keys():
                             allAnnotations[pubmedid][type] = [name]
                         else:
-                            allAnnotations[pubmedid][type].append(name)
+                            if not name in allAnnotations[pubmedid][type]:
+                                allAnnotations[pubmedid][type].append(name)
                 pubmedEntryInstance.setMLinfo(annotations)
                 pubmedEntryInstance.usedPubtator()
 
 
-def calculateScores():
-    for key, value in pubmedEntry.instancesDict.items():
-        id = key
-        if value.getPubtatorStatus():
-            print(key, value.getDatePublication())
-
-
 def getPubmedArticlesByID(idList, searchTerm):
-    print(idList)
     handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
                            retmode="text")
     records = Medline.parse(handle)
@@ -211,6 +204,19 @@ def getPubmedArticlesByID(idList, searchTerm):
         pubmedEntryInstance.setDatePublication(record.get("DP"))
         pubmedEntryInstance.setAbout(record.get("AB"))
         pubmedEntryInstance.setTitle(record.get("TI"))
+
+
+def calculateScores(searchList, geneList):
+    for key, value in pubmedEntry.instancesDict.items():
+        id = key
+        if value.getPubtatorStatus():
+            yearsAgo = datetime.today().year - value.getDatePublication().year
+            try:
+                genenGevonden = value.getMlinfo()[id]["Gene"]
+                res = [genenGevonden.index(i) for i in geneList]
+                print(res)
+            except KeyError:
+                voorkomensTerm = 0
 
 
 class pubmedEntry():
@@ -271,4 +277,4 @@ class pubmedEntry():
         return self.__withPubtator
 
 
-main("Developmental delay", [], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
+# main("Homo sapiens", ["ABCD1"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
