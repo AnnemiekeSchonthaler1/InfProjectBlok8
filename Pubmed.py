@@ -20,6 +20,7 @@ maxdate = ""
 
 
 def main(searchList, geneList, email, searchDate, today):
+    print("Pubtator is zijn ding gaan doen")
     start = time.time()
     pubmedEntry.allAnnotations = {}
 
@@ -41,15 +42,22 @@ def main(searchList, geneList, email, searchDate, today):
     # searchTerm contains this query
     searchTerm, geneList = makeQuery(searchList, geneList, dictSynonyms)
 
+    print("De query is ook geformuleerd")
+
     # I look for articles with the formulated query
     maxResults = getAmountOfResults(searchTerm)
+    print("Ik heb gekeken hoeveel id's er kunnen worden opgehaald")
     # Het maximale wat kan is 500.000
     plafond = 5000
     if int(maxResults) > plafond:
+        print("Ik heb ingegrepen en dit aantal naar beneden gehaald")
         maxResults = plafond
     # There is no need to look for results if there aren't any
+    print("Het aantal mogelijke resultaten is "+str(maxResults))
     if int(maxResults) != 0:
+        print("En ik ben ermee aan de slag gegaan")
         idList = getPubmedIDs(maxResults, searchTerm)
+        print("Ik heb nu ook de id's opgehaald en ja dit printje is dubbel maar idc oke")
         # idList = idList[0:500]
         ArticleInfoRetriever(idList, searchTerm)
     #calculateScores(searchList, geneList)
@@ -128,6 +136,7 @@ def getPubmedIDs(maxResults, searchTerm):
 
 
 def ArticleInfoRetriever(idList, searchTerm):
+    print("Oke ik begin met pubtator")
     allAnnotations = {}
     idList = list(idList)
     # Ik haal alle dubbele er uit
@@ -146,12 +155,13 @@ def ArticleInfoRetriever(idList, searchTerm):
                                          "gene, disease, chemical, species, proteinmutation, dnamutation")
         if not output is None:
             articleInfoProcessor(output, searchTerm, allAnnotations)
-
+    
+    print("En ik ben klaar met pubtator")
     pubmedEntry.allAnnotations = allAnnotations
     allAnnotationIds = set(allAnnotations.keys())
     remainingIds = remainingIds.difference(allAnnotationIds)
     getPubmedArticlesByID(list(remainingIds), searchTerm)
-    print(allAnnotations)
+    print("alle annotaties: "+allAnnotations)
 
 
 # Deze functie haalt de nodige informatie uit het json file
@@ -212,11 +222,14 @@ def calculateScores(searchList, geneList):
         if value.getPubtatorStatus():
             yearsAgo = datetime.today().year - value.getDatePublication().year
             try:
-                genenGevonden = value.getMlinfo()[id]["Gene"]
-                res = [genenGevonden.index(i) for i in geneList]
-                print(res)
+                genenGevonden = list(value.getMlinfo()[id]["Gene"])
+                for gene in geneList:
+                    if gene in genenGevonden:
+                        voorkomensTerm = genenGevonden.count(gene)
+                        alleTermen = len(genenGevonden)
             except KeyError:
                 voorkomensTerm = 0
+            
 
 
 class pubmedEntry():
@@ -277,4 +290,4 @@ class pubmedEntry():
         return self.__withPubtator
 
 
-# main("Homo sapiens", ["ABCD1"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
+#main("Homo sapiens", ["ABCD1"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
