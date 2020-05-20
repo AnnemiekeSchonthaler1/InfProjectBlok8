@@ -127,6 +127,7 @@ def getPubmedIDs(maxResults, searchTerm):
 
 
 def ArticleInfoRetriever(idList, searchTerm):
+    allAnnotations = {}
     idList = list(idList)
     # Ik haal alle dubbele er uit
     idList = set(idList)
@@ -137,15 +138,15 @@ def ArticleInfoRetriever(idList, searchTerm):
             # zodat de restgetallen mee kunnen worden genomen die niet meer in een slice passen
             output = pubtator.SubmitPMIDList(idList[i - slice:i], "biocjson",
                                              "gene, disease, chemical, species, proteinmutation, dnamutation")
-            articleInfoProcessor(output, searchTerm, annotations)
+            articleInfoProcessor(output, searchTerm, allAnnotations)
     else:
         output = pubtator.SubmitPMIDList(idList, "biocjson",
                                          "gene, disease, chemical, species, proteinmutation, dnamutation")
-        articleInfoProcessor(output, searchTerm)
-
+        articleInfoProcessor(output, searchTerm, allAnnotations)
+    pubmedEntry.allAnnotations = allAnnotations
 
 # Deze functie haalt de nodige informatie uit het json file
-def articleInfoProcessor(pubtatoroutput, searchTerm):
+def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
     annotations = {}
     # todo stop dit allemaal in de database
     if not len(pubtatoroutput) == 0:
@@ -156,6 +157,7 @@ def articleInfoProcessor(pubtatoroutput, searchTerm):
                 pubmedid = y["pmid"]
                 pubmedid = str(pubmedid)
                 annotations[pubmedid] = {}
+                allAnnotations[pubmedid] = {}
                 datePublished = y["created"]["$date"]
                 datePublished = datetime.fromtimestamp(datePublished / 1000.0)
                 author = y["authors"]
@@ -174,6 +176,10 @@ def articleInfoProcessor(pubtatoroutput, searchTerm):
                             annotations[pubmedid][type] = [name]
                         else:
                             annotations[pubmedid][type].append(name)
+                        if not type in allAnnotations[pubmedid].keys():
+                            allAnnotations[pubmedid][type] = [name]
+                        else:
+                            allAnnotations[pubmedid][type].append(name)
                 pubmedEntryInstance.setMLinfo(annotations)
 
 
@@ -196,6 +202,7 @@ class pubmedEntry():
     instancesList = []
     dictSynonyms = {}
     __MLinfo = {}
+    allAnnotations = {}
     ML_single = {}
 
     def __init__(self, pubmedID, searchterm, author):
