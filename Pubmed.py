@@ -127,7 +127,6 @@ def getPubmedIDs(maxResults, searchTerm):
 
 
 def ArticleInfoRetriever(idList, searchTerm):
-    annotations = {}
     idList = list(idList)
     # Ik haal alle dubbele er uit
     idList = set(idList)
@@ -142,13 +141,12 @@ def ArticleInfoRetriever(idList, searchTerm):
     else:
         output = pubtator.SubmitPMIDList(idList, "biocjson",
                                          "gene, disease, chemical, species, proteinmutation, dnamutation")
-        articleInfoProcessor(output, searchTerm, annotations)
-    pubmedEntry.annotations = annotations
-    print(annotations)
+        articleInfoProcessor(output, searchTerm)
 
 
 # Deze functie haalt de nodige informatie uit het json file
-def articleInfoProcessor(pubtatoroutput, searchTerm, annotations):
+def articleInfoProcessor(pubtatoroutput, searchTerm):
+    annotations = {}
     # todo stop dit allemaal in de database
     if not len(pubtatoroutput) == 0:
         for entry in pubtatoroutput.split("\n"):
@@ -176,6 +174,7 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, annotations):
                             annotations[pubmedid][type] = [name]
                         else:
                             annotations[pubmedid][type].append(name)
+                pubmedEntryInstance.setMLinfo(annotations)
 
 
 def getPubmedArticlesByID(idList, searchTerm):
@@ -194,10 +193,9 @@ class pubmedEntry():
     __datePublication = 0
     __about = ""
     __title = ""
-    annotations = []
     instancesList = []
     dictSynonyms = {}
-    MLinfo = {}
+    __MLinfo = {}
     ML_single = {}
 
     def __init__(self, pubmedID, searchterm, author):
@@ -215,9 +213,12 @@ class pubmedEntry():
     def setAbout(self, about):
         if about is not None:
             self.__about = about
-    def setMLinfo(self):
-        self.MLinfo = self.annotations[self.pubmedID]
 
+    def setMLinfo(self, annotations):
+        self.__MLinfo = annotations
+
+    def getMlinfo(self):
+        return self.__MLinfo
 
     def getAbout(self):
         return self.__about
@@ -235,4 +236,4 @@ class pubmedEntry():
     def identifiers(self):
         return
 
-#main("Developmental delay", ["CHD8"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
+# main("Developmental delay", ["CHD8"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
