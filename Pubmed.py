@@ -21,6 +21,7 @@ maxdate = ""
 
 def main(searchList, geneList, email, searchDate, today):
     start = time.time()
+    pubmedEntry.allAnnotations = {}
 
     # I set the dates to the entered values
     global mindate
@@ -133,9 +134,9 @@ def ArticleInfoRetriever(idList, searchTerm):
     idList = set(idList)
     idList = list(idList)
     slice = 500
+    remainingIds = set(idList)
     if len(idList) > slice:
         for i in range(slice, len(idList), slice):
-            # zodat de restgetallen mee kunnen worden genomen die niet meer in een slice passen
             output = pubtator.SubmitPMIDList(idList[i - slice:i], "biocjson",
                                              "gene, disease, chemical, species, proteinmutation, dnamutation")
             articleInfoProcessor(output, searchTerm, allAnnotations)
@@ -143,7 +144,12 @@ def ArticleInfoRetriever(idList, searchTerm):
         output = pubtator.SubmitPMIDList(idList, "biocjson",
                                          "gene, disease, chemical, species, proteinmutation, dnamutation")
         articleInfoProcessor(output, searchTerm, allAnnotations)
+
     pubmedEntry.allAnnotations = allAnnotations
+    allAnnotationIds = set(allAnnotations.keys())
+    remainingIds = remainingIds.difference(allAnnotationIds)
+    getPubmedArticlesByID(list(remainingIds), searchTerm)
+
 
 # Deze functie haalt de nodige informatie uit het json file
 def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
@@ -188,9 +194,11 @@ def getPubmedArticlesByID(idList, searchTerm):
                            retmode="text")
     records = Medline.parse(handle)
     records = list(records)
-    entryOtDict = {}
     for record in records:
-        print(record)
+        pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"))
+        pubmedEntryInstance.setDatePublication(record.get("DP"))
+        pubmedEntryInstance.setAbout(record.get("AB"))
+        pubmedEntryInstance.setTitle(record.get("TI"))
 
 
 class pubmedEntry():
@@ -199,7 +207,7 @@ class pubmedEntry():
     __datePublication = 0
     __about = ""
     __title = ""
-    instancesList = []
+    instancesDict = {}
     dictSynonyms = {}
     __MLinfo = {}
     allAnnotations = {}
@@ -209,7 +217,7 @@ class pubmedEntry():
         self.pubmedID = str(pubmedID)
         self.searchTerm = searchterm
         self.author = author
-        pubmedEntry.instancesList.append(self)
+        pubmedEntry.instancesDict[pubmedID] = self
 
     def setGeneID(self, geneIDIncoming):
         self.__geneID = geneIDIncoming
@@ -243,4 +251,5 @@ class pubmedEntry():
     def identifiers(self):
         return
 
-# main("Developmental delay", ["CHD8"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
+
+# main("Developmental delay", [], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
