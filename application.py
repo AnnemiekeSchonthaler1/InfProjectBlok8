@@ -39,6 +39,7 @@ def results():
     infodic={}
     pubmed_entries = None
     recipe_data = None
+    amount_of_articles = None
     today = datetime.date.today()
     if request.method == 'POST':
         print("hi i got to the loop to digest data")
@@ -55,6 +56,8 @@ def results():
                 print(search_list)
             elif key == "organism":
                 organism = value
+            elif key == "amount_articles":
+                amount_of_articles = value
             elif key == "mail":
                 mail = value
 

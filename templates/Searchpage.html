@@ -114,7 +114,7 @@ th {
     <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
     <p>
     <label class="w3-text-black"><b>Specified Organism</b></label>
-    <input placeholder="Mouse (*optional)" class="w3-input w3-border w3-white" name="organism" type="text"</p>
+    <input placeholder="Mouse (*optional)" class="w3-input w3-border w3-white" name="organism" type="text">
     <p>
     <label class="w3-text-black"><b>E-mail</b></label>
     <input  placeholder="Your.Name.Here@example.org" class="w3-input w3-border w3-white" name="mail" type="text" pattern="\S+@\S+" required></p>
@@ -140,6 +140,7 @@ th {
         <div class="w3-third">
         <select class="w3-select w3-section w3-cell" name="wordcloud_cutoff" required>
             <option value="" disabled selected>Choose Wordcloud cut-off</option>
+            <option value=0>no wordcloud pls</option>
             <option value=50>50 (time indication: 0,8 s)</option>
             <option value=100>100 (time indication: 1,7 m)</option>
             <option value=200>200 (time indication: 3,4 m)</option>
@@ -154,6 +155,16 @@ th {
             <option value=4000>4000 (time indication: 1h 6 m)</option>
             <option value=5000>5000 (time indication: 1h 38 m)</option>
             <option value="all"> i have all the time</option>
+        </select>
+        </div>
+        <div class="w3-third">
+        <select class="w3-select w3-section w3-cell" name="amount_articles" required>
+            <option value="" disabled selected>How many articles to retrieve</option>
+            <option value=100000> 100000</option>
+            <option value=200000> 200000</option>
+            <option value=300000> 300000</option>
+            <option value=400000> 400000</option>
+            <option value=500000> 500000</option>
         </select>
         </div>
     </div>
