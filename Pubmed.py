@@ -161,7 +161,7 @@ def ArticleInfoRetriever(idList, searchTerm):
     allAnnotationIds = set(allAnnotations.keys())
     remainingIds = remainingIds.difference(allAnnotationIds)
     getPubmedArticlesByID(list(remainingIds), searchTerm)
-    print("alle annotaties: "+allAnnotations)
+    print("alle annotaties: "+str(allAnnotations))
 
 
 # Deze functie haalt de nodige informatie uit het json file
