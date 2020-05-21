@@ -53,14 +53,14 @@ def main(searchList, geneList, email, searchDate, today):
         print("Ik heb ingegrepen en dit aantal naar beneden gehaald")
         maxResults = plafond
     # There is no need to look for results if there aren't any
-    print("Het aantal mogelijke resultaten is "+str(maxResults))
+    print("Het aantal mogelijke resultaten is " + str(maxResults))
     if int(maxResults) != 0:
         print("En ik ben ermee aan de slag gegaan")
         idList = getPubmedIDs(maxResults, searchTerm)
         print("Ik heb nu ook de id's opgehaald en ja dit printje is dubbel maar idc oke")
         # idList = idList[0:500]
         ArticleInfoRetriever(idList, searchTerm)
-    #calculateScores(searchList, geneList)
+    calculateScores(searchList, geneList)
     print("Dit duurt " + str(time.time() - start) + " secondes")
 
 
@@ -155,7 +155,7 @@ def ArticleInfoRetriever(idList, searchTerm):
                                          "gene, disease, chemical, species, proteinmutation, dnamutation")
         if not output is None:
             articleInfoProcessor(output, searchTerm, allAnnotations)
-    
+
     print("En ik ben klaar met pubtator")
     pubmedEntry.allAnnotations = allAnnotations
     allAnnotationIds = set(allAnnotations.keys())
@@ -204,6 +204,7 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
 
 
 def getPubmedArticlesByID(idList, searchTerm):
+    print("pubtator had geen match")
     handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
                            retmode="text")
     records = Medline.parse(handle)
@@ -221,14 +222,48 @@ def calculateScores(searchList, geneList):
         if value.getPubtatorStatus():
             yearsAgo = datetime.today().year - value.getDatePublication().year
             try:
+                # Ik kijk hoeveel van de gevonden genen in mijn lijst staan
                 genenGevonden = list(value.getMlinfo()[id]["Gene"])
+                voorkomensTerm = 0
                 for gene in geneList:
                     if gene in genenGevonden:
-                        voorkomensTerm = genenGevonden.count(gene)
-                        alleTermen = len(genenGevonden)
+                        voorkomensTerm += genenGevonden.count(gene)
+                alleTermen = len(genenGevonden)
             except KeyError:
                 voorkomensTerm = 0
-            
+                alleTermen = 0
+
+            searchWords = []
+            # En ik kijk hoeveel van de gevonden zoektermen in mijn lijst staan
+            if list(value.getMlinfo()[id].keys()).count(["Chemical"]) > 0:
+                searchWords += value.getMlinfo()[id]["Chemical"]
+            if list(value.getMlinfo()[id].keys()).count(["Disease"]) > 0:
+                searchWords += value.getMlinfo()[id]["Disease"]
+            if list(value.getMlinfo()[id].keys()).count(["Mutation"]) > 0:
+                searchWords += value.getMlinfo()[id]["Mutation"]
+            for word in searchList:
+                if word in searchWords:
+                    voorkomensTerm += searchWords.count(word)
+                    alleTermen += len(searchWords)
+
+            allValues = []
+            for mlValue in value.getMlinfo()[id].values():
+                allValues += mlValue
+
+            foundTerms = 0
+            for term in (geneList + searchList):
+                if term in allValues:
+                    foundTerms += 1
+
+            if not alleTermen == 0:
+                print(id)
+                print("score: " + str(
+                    ((voorkomensTerm / alleTermen) + (foundTerms / len(geneList + searchList)) * 2) - yearsAgo))
+                value.setScore(score=((voorkomensTerm / alleTermen) + (foundTerms / len(geneList + searchList)) * 2) - yearsAgo)
+            else:
+                print(id)
+                print("score: " + str((0 + (foundTerms / len(geneList + searchList)) * 2) - yearsAgo))
+                value.setScore(score=(0 + (foundTerms / len(geneList + searchList)) * 2) - yearsAgo)
 
 
 class pubmedEntry():
@@ -248,6 +283,7 @@ class pubmedEntry():
         self.pubmedID = str(pubmedID)
         self.searchTerm = searchterm
         self.author = author
+
         pubmedEntry.instancesDict[pubmedID] = self
 
     def setGeneID(self, geneIDIncoming):
@@ -288,5 +324,10 @@ class pubmedEntry():
     def getPubtatorStatus(self):
         return self.__withPubtator
 
+    def setScore(self, score):
+        self.score = score
+        
+    def getScore(self):
+        return self.score
 
-#main("Homo sapiens", ["ABCD1"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
+# main(["Homo sapiens"], ["ABCD1", "Aardappel"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
