@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html>
+<head>
 <title>W3.CSS Template</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src='https://kit.fontawesome.com/a076d05399.js'></script>
+<script src="https://kryogenix.org/code/browser/sorttable/sorttable.js"></script>
+</head>
 <style>
 .w3-theme-blue {color:#fff !important;background-color: #bcccfe !important}
 
@@ -24,7 +28,46 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 /* Add a left margin to the "page content" that matches the width of the sidebar (120px) */
 #main {margin-left: 120px}
 /* Remove margins from "page content" on small screens */
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
 
+td,
+th {
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #ddd;
+}
+.textarea{
+  width:100%;
+  overflow:hidden;
+  height:150px;
+  max-height:150px;
+  border:1px solid #ccc;
+  overflow-y: auto;
+}
+
+/* The scrollable part */
+
+.scrollable {
+  min-height: 100px;
+  max-height: 300px;
+  width: 100%;
+  overflow-y: scroll;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  position: sticky;
+  background-color: white;
+  z-index: 2;
+  top: 0;
+}
 </style>
 <body class="w3-theme-blue">
 
@@ -70,6 +113,8 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
     <label class="w3-text-black"><b>disease-characteristics</b></label>
     <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
     <p>
+    <label class="w3-text-black"><b>Specified Organism</b></label>
+    <input placeholder="Mouse (*optional)" class="w3-input w3-border w3-white" name="organism" type="text"</p>
     <p>
     <label class="w3-text-black"><b>E-mail</b></label>
     <input  placeholder="Your.Name.Here@example.org" class="w3-input w3-border w3-white" name="mail" type="text" pattern="\S+@\S+" required></p>
@@ -122,9 +167,27 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
   <div class="w3-container w3-theme-l3-darkpurple">
     <h2>Results </h2>
   </div>
-    <div class="w3-container w3-section w3-theme-l1" >
-        {% if plot != None %}
-        <img class="w3-margin" src="data:image/png;base64, {{ plot }}">
+    <div class=" w3-container w3-cell-row w3-section w3-theme-l1" style="height: 300px;width: 100%">
+        {% if plot != None and recipe_dict != None%}
+        <div class="w3-container w3-mobile" >
+            <img class="w3-section" src="data:image/png;base64, {{ plot }}">
+        </div>
+        <div class=" w3-container w3-mobile">
+            <div class="scrollable w3-margin">
+              <table class="sortable w3-table-all w3-text-black">
+                <tr>
+                  <th>Gene</th>
+                  <th>Amount of Articles</th>
+                </tr>
+                  {% for gene_name, value in recipe_dict.items() %}
+                <tr>
+                  <td>{{ gene_name }}</td>
+                  <td>{{ value }}</td>
+                </tr>
+                  {% endfor %}
+              </table>
+            </div>
+        </div>
         {% endif %}
     </div>
     {% if"articles" in genedic.keys() %}
@@ -134,7 +197,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 
 
              <button onclick="myFunction('{{name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
-                 {{ name }} </button>
+                 {{ name }}  <i class='fas fa-angle-down'></i> </button>
             <div id="{{name }}" class="w3-container w3-hide w3-border">
         {%for omim_name, omim_id in genedic["omim_id"].items() %}
         {%if name == omim_name %}
@@ -178,15 +241,18 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
         <span onclick="document.getElementById('{{ id }}').style.display='none'" class="w3-button w3-display-topright">&times;</span>
         <!-- Code for modal in here-->
           <div class="w3-container w3-theme-l1 w3-section">
-          <p> TITLE OF ARTICLE </p>
+          <p> {{ entries[id].getTitle() }} </p>
           </div>
-          <iframe class="w3-margin-64" src="https://www.ncbi.nlm.nih.gov/pubmed/?term={{id}}" style="width: 100%"></iframe>
+            <h5 class="w3-text-black">Abstract: </h5>
+          <div class="textarea">
+              <p class="w3-text-black"> {{ entries[id].getAbout() }}</p>
+          </div>
           <div class="w3-cell-row" style="width:100%">
           <div class="w3-container w3-cell w3-border">
           {% for name, list in dic.items()%}
               {% if name != id %}
             <button onclick="myFunction('{{ id+name }}')" class="w3-button w3-block w3-left-align w3-border w3-theme-l1 w3-margin-top">
-            {{ name }}</button>
+            {{ name }}  <i class='fas fa-angle-down'></i></button>
             <div id="{{ id+name }}" class="w3-container w3-hide">
                 {% for value in list %}
                 <p class="w3-white">{{ value }}</p>

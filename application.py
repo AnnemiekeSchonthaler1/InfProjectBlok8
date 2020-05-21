@@ -32,10 +32,13 @@ def results():
     mail = ""
     search_date = ""
     wordcloud_cutoff = ""
+    organism = ""
     plot_url = ""
     search_list = []
     URL_dic = {}
     infodic={}
+    pubmed_entries = None
+    recipe_data = None
     today = datetime.date.today()
     if request.method == 'POST':
         print("hi i got to the loop to digest data")
@@ -50,7 +53,8 @@ def results():
                 disease_char = value
                 search_list = disease_char.split(",")
                 print(search_list)
-
+            elif key == "organism":
+                organism = value
             elif key == "mail":
                 mail = value
 
@@ -72,6 +76,7 @@ def results():
         print("hi ik roep pubmed nu aan")
         Pubmed.main(searchList=search_list, geneList=gene_list, email=mail, searchDate=search_date, today=today)
         print("ik haal nu de annotaties op")
+        pubmed_entries = Pubmed.pubmedEntry.instancesDict
         infodic = Pubmed.pubmedEntry.allAnnotations
         if len(gene_list) == 0:
             print("ik ga nu een genlijst maken want die had je niet")
@@ -118,7 +123,7 @@ def results():
         print("volledig dicy ", full_dicy)
     # Embed the result in the html output.
         print("genereer pagina nu maar... hopelijk")
-    return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic)
+    return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic, recipe_dict=recipe_data, entries=pubmed_entries)
 
 
 def most_frequent(List):
