@@ -38,7 +38,7 @@ def results():
     URL_dic = {}
     infodic={}
     pubmed_entries = None
-    recipe_data = None
+    recipe_data = {}
     amount_of_articles = None
     today = datetime.date.today()
     if request.method == 'POST':
@@ -101,10 +101,7 @@ def results():
         gene_dic, recipe_data = make_genedic_and_count(Synonymdict)
 
         # make the graph of amount of results per gene found mmmmmm donut
-        print("we maken nu een grafiek van de count data")
-        plt = Graphs.Graph(recipe_data)
-        print("we saven de grafiek")
-        plot_url = save_to_url(plt)
+        
         print("were making graphs now... this might take a while")
         current = len(Pubmed.pubmedEntry.instancesDict)
         length = len(Pubmed.pubmedEntry.instancesDict)

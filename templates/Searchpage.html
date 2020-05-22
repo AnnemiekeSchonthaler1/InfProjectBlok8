@@ -108,7 +108,7 @@ th {
   <div class="w3-container w3-theme-l3-darkpurple">
     <h2>Search </h2>
   </div>
-  <form class="w3-container" method="post" action="https://hannl-hlo-bi2a1-app.azurewebsites.net/result">
+  <form class="w3-container" method="post" action="http://localhost:5000/result">
     <p>
     <label class="w3-text-black"><b>disease-characteristics</b></label>
     <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
@@ -178,13 +178,14 @@ th {
   <div class="w3-container w3-theme-l3-darkpurple">
     <h2>Results </h2>
   </div>
-    <div class=" w3-container w3-cell-row w3-section w3-theme-l1" style="height: 300px;width: 100%">
+    <div class=" w3-container w3-cell-row w3-section w3-white" style="height: 300px;width: 100%">
         {% if plot != None and recipe_dict != None%}
-        <div class="w3-container w3-mobile" >
-            <img class="w3-section" src="data:image/png;base64, {{ plot }}">
+        <div class="w3-container w3-cell w3-margin" style="width: 100%; height: 380px" >
+            <div id="chartContainer" style="height: 370px; width: 50%;"></div>
+            <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
         </div>
-        <div class=" w3-container w3-mobile">
-            <div class="scrollable w3-margin">
+        <div class=" w3-container "style="width: 100%; height: 380px">
+            <div class="scrollable w3-margin"style="width: 100%">
               <table class="sortable w3-table-all w3-text-black">
                 <tr>
                   <th>Gene</th>
@@ -205,8 +206,6 @@ th {
      {% for name, gene in genedic["articles"].items()%}
 
          <div class = "w3-card w3-white, w3-margin">
-
-
              <button onclick="myFunction('{{name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
             <div id="{{name }}" class="w3-container w3-hide w3-border">
@@ -233,7 +232,7 @@ th {
                         <li>
                         <div class="w3-bar w3-light">
                             <div class=" w3-button w3-left"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{item.getTitle()}}</a></div>
-                        <div class=" w3-button w3-right w3-border " onclick="document.getElementById({{ item.pubmedID }}).style.display='block'"> more info</div>
+                        <div class="w3-button w3-right w3-border w3-opaque" onclick="document.getElementById({{ item.pubmedID }}).style.display='block'"> more info</div>
                         </div>
                         </li>
                     {% endfor %}
@@ -285,7 +284,33 @@ th {
   </div>
 {% endfor %}
 </div>
+<script>
+window.onload = function() {
 
+var chart = new CanvasJS.Chart("chartContainer", {
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+	exportEnabled: true,
+	animationEnabled: true,
+	title: {
+		text: "Amount of found Articles per Gene"
+	},
+	data: [{
+		type: "pie",
+		startAngle: 25,
+		toolTipContent: "<b>{label}</b>: {y} articles",
+		indexLabelFontSize: 16,
+		indexLabel: "{label} - {y}",
+		dataPoints: [
+		    {% for key,value in recipe_dict.items() %}
+                { y: {{value}}, label: "{{key}}"} ,
+            {% endfor %}
+		]
+	}]
+});
+chart.render();
+
+}
+</script>
 <script>
 function myFunction(id) {
     const x = document.getElementById(id);
