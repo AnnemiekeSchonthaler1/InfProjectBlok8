@@ -101,7 +101,7 @@ def results():
         gene_dic, recipe_data = make_genedic_and_count(Synonymdict)
 
         # make the graph of amount of results per gene found mmmmmm donut
-        
+
         print("were making graphs now... this might take a while")
         current = len(Pubmed.pubmedEntry.instancesDict)
         length = len(Pubmed.pubmedEntry.instancesDict)

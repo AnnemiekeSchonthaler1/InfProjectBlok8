@@ -14,7 +14,7 @@
 .w3-theme-blue {color:#fff !important;background-color: #bcccfe !important}
 
 .w3-theme-l3 {color:#000 !important; background-color: #cfdbfe !important}
-.w3-theme-l2 {color:#fff !important; background-color: #d5a4d4 !important}
+.w3-theme-l2 {color:#fff !important; background-color: #2eacd1 !important}
 .w3-theme-l1 {color:#fff !important; background-color: #8a8aae !important}
 .w3-light {color:#000 !important;background-color: #ffffff !important}
 .w3-theme-l3-purple {color:#000 !important; background-color:#e4c6e2 !important}
@@ -33,7 +33,6 @@ table {
   border-collapse: collapse;
   width: 100%;
 }
-
 td,
 th {
   text-align: left;
@@ -181,11 +180,13 @@ th {
     <div class=" w3-container w3-cell-row w3-section w3-white" style="height: 300px;width: 100%">
         {% if plot != None and recipe_dict != None%}
         <div class="w3-container w3-cell w3-margin" style="width: 100%; height: 380px" >
-            <div id="chartContainer" style="height: 370px; width: 50%;"></div>
+            <div id="chartContainer" style="height: 370px; max-width: 920px; margin: 5px auto;"></div>
+            <button class="w3-button w3-theme-l2 w3-text-white invisible" id="backButton">< Back</button>
+            <script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
             <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
         </div>
-        <div class=" w3-container "style="width: 100%; height: 380px">
-            <div class="scrollable w3-margin"style="width: 100%">
+        <div class=" w3-container " style="width: 100%; height: 380px">
+            <div class="scrollable w3-margin" style="width: 100%">
               <table class="sortable w3-table-all w3-text-black">
                 <tr>
                   <th>Gene</th>
@@ -202,10 +203,12 @@ th {
         </div>
         {% endif %}
     </div>
-    {% if"articles" in genedic.keys() %}
+        {% if"articles" in genedic.keys() %}
      {% for name, gene in genedic["articles"].items()%}
 
          <div class = "w3-card w3-white, w3-margin">
+
+
              <button onclick="myFunction('{{name }}')" class="w3-button w3-block w3-theme-l1  w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
             <div id="{{name }}" class="w3-container w3-hide w3-border">
@@ -242,6 +245,8 @@ th {
          </div>
      {% endfor %}
     {% endif %}
+    </div>
+
     </div>
 
 {% for id, dic in infodic.items() %}
@@ -284,33 +289,7 @@ th {
   </div>
 {% endfor %}
 </div>
-<script>
-window.onload = function() {
 
-var chart = new CanvasJS.Chart("chartContainer", {
-	theme: "light2", // "light1", "light2", "dark1", "dark2"
-	exportEnabled: true,
-	animationEnabled: true,
-	title: {
-		text: "Amount of found Articles per Gene"
-	},
-	data: [{
-		type: "pie",
-		startAngle: 25,
-		toolTipContent: "<b>{label}</b>: {y} articles",
-		indexLabelFontSize: 16,
-		indexLabel: "{label} - {y}",
-		dataPoints: [
-		    {% for key,value in recipe_dict.items() %}
-                { y: {{value}}, label: "{{key}}"} ,
-            {% endfor %}
-		]
-	}]
-});
-chart.render();
-
-}
-</script>
 <script>
 function myFunction(id) {
     const x = document.getElementById(id);
@@ -322,6 +301,110 @@ function myFunction(id) {
 }
 </script>
 
+<script>
+window.onload = function () {
+
+var visitorsData = {
+	"Articles per gene": [{
+		click: visitorsChartDrilldownHandler,
+		cursor: "pointer",
+		explodeOnClick: false,
+		innerRadius: "50%",
+		name: "New vs Returning Visitors",
+		radius: "100%",
+        legend: {
+		    horizontalAlign: "left", // left, center ,right
+            verticalAlign: "center",  // top, center, bottom
+        },
+		startAngle: 90,
+		type: "doughnut",
+		dataPoints: [
+		    {% for key, value in recipe_dict.items()%}
+                { y: {{value}}, name: "{{key}}"} ,
+            {% endfor %}
+
+		]
+	}],
+    {% if 'articles' in genedic.keys() %}
+    {% for key, value in genedic['articles'].items() %}
+	"{{ key }}": [{
+		color: "#5be7bf",
+		name: "{{ key }}",
+		type: "column",
+		dataPoints: [
+            {% for genething, article_list in value.items() %}
+                {% for idk in article_list %}
+			    { label: '{{ idk.getTitle() }}', y: {{ idk.getScore() }} },
+                {% endfor %}
+            {% endfor %}
+		]
+	}],
+    {% endfor %}
+    {% endif %}
+
+};
+
+var newVSReturningVisitorsOptions = {
+	animationEnabled: true,
+	theme: "light2",
+    legend: {
+	    horizontalAlign: "left",
+        verticalAlign: "center"
+    },
+	title: {
+		text: "Amount of Articles per gene"
+	},
+	subtitles: [{
+		text: "Click on Any Segment to see scores per article",
+		backgroundColor: "#2eacd1",
+		fontSize: 16,
+		fontColor: "white",
+		padding: 5
+	}],
+	data: []
+};
+
+var visitorsDrilldownedChartOptions = {
+	animationEnabled: true,
+	theme: "light2",
+	axisX: {
+        valueFormatString: " ",
+		labelFontColor: "#717171",
+		lineColor: "#a2a2a2",
+		tickColor: "#a2a2a2"
+	},
+	axisY: {
+		gridThickness: 0,
+		includeZero: false,
+		labelFontColor: "#717171",
+		lineColor: "#a2a2a2",
+		tickColor: "#a2a2a2",
+		lineThickness: 1
+	},
+	data: []
+};
+
+var chart = new CanvasJS.Chart("chartContainer", newVSReturningVisitorsOptions);
+chart.options.data = visitorsData["Articles per gene"];
+chart.render();
+
+function visitorsChartDrilldownHandler(e) {
+	chart = new CanvasJS.Chart("chartContainer", visitorsDrilldownedChartOptions);
+	chart.options.data = visitorsData[e.dataPoint.name];
+	chart.options.title = { text: e.dataPoint.name };
+	chart.render();
+	$("#backButton").toggleClass("invisible");
+}
+
+$("#backButton").click(function() {
+	$(this).toggleClass("invisible");
+	chart = new CanvasJS.Chart("chartContainer", newVSReturningVisitorsOptions);
+	chart.options.data = visitorsData["Articles per gene"];
+	chart.render();
+});
+
+}
+</script>
 
 </body>
 </html>
