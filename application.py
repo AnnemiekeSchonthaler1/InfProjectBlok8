@@ -77,7 +77,8 @@ def results():
                 print(wordcloud_cutoff)
 
         print("hi ik roep pubmed nu aan")
-        Pubmed.main(searchList=search_list, geneList=gene_list, email=mail, searchDate=search_date, today=today)
+        Pubmed.main(searchList=search_list, geneList=gene_list, email=mail, searchDate=search_date, today=today,
+                    organism=organism, maxArticles=amount_of_articles)
         print("ik haal nu de annotaties op")
         pubmed_entries = Pubmed.pubmedEntry.instancesDict
         infodic = Pubmed.pubmedEntry.allAnnotations
