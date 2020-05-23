@@ -17,10 +17,6 @@
 .pinky {color:#fff !important;background-color: #cb74a7 !important}
 .bluegreeny {color:#fff !important; background-color: #5da8a2 !important}
 .darkpurpley {color:#fff !important; background-color: #3d3479 !important}
-.bluey-light {color:#fff !important; background-color: rgba(100, 191, 228, 0.44) !important}
-.pinky-light {color:#fff !important;background-color: rgba(203, 116, 167, 0.4) !important}
-.bluegreeny-light {color:#fff !important; background-color: rgba(93, 168, 162, 0.43) !important}
-.darkpurpley-light {color:#fff !important; background-color: rgba(61, 52, 121, 0.45) !important}
 
 
 body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
@@ -37,19 +33,19 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 <nav class="w3-sidebar w3-card-4 w3-bar-block w3-small w3-hide-small w3-center ">
   <!-- Avatar image in top left corner -->
   <img src="../static/caticon.gif" style="width:100%" alt="icon">
-  <a href="#" class="w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar w3-border-white bluegreeny w3-hover-white w3-section ">
+  <a href="#" class="w3-wide w3-bar-item w3-button w3-round-xlarge w3-padding-large w3-topbar w3-bottombar w3-border-white bluegreeny w3-hover-white w3-section ">
     <i class="fa fa-home w3-xxlarge"></i>
     <p>HOME</p>
   </a>
-  <a href="#about" class="w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar w3-border-white pinky w3-hover-white w3-section ">
+  <a href="#about" class="w3-wide w3-opacity-min w3-bar-item w3-button w3-round-xlarge w3-padding-large w3-topbar w3-bottombar w3-border-white pinky w3-hover-white w3-section ">
     <i class="fa fa-user w3-xxlarge"></i>
     <p>ABOUT</p>
   </a>
-    <a href='{{ url_for('results') }}' class="w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar  w3-border-white bluey w3-hover-white w3-section">
+    <a href='{{ url_for('results') }}' class="w3-wide w3-opacity-min w3-round-xlarge w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar  w3-border-white bluey w3-hover-white w3-section">
     <i class="fa fa-search w3-xxlarge"></i>
     <p>SEARCH</p>
   </a>
-    <a href="#team" class="w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar w3-border-white darkpurpley w3-hover-white w3-section">
+    <a href="#team" class="w3-wide w3-opacity-min w3-bar-item w3-button w3-round-xlarge w3-padding-large w3-topbar w3-bottombar w3-border-white darkpurpley w3-hover-white w3-section">
     <i class="fa fa-group w3-xxlarge"></i>
     <p>OUR TEAM</p>
   </a>
@@ -69,24 +65,24 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
 <div class="w3-padding-large" id="main">
   <!-- Header/Home -->
   <header class="w3-card w3-padding-32 w3-center w3-theme-l3" id="home">
-      <span class="w3-hide-small"></span>  <span class="w3-padding-64 darkpurpley w3-opacity-min"><label class="w3-padding w3-margin" style="font-size: 55px">PUBMED SEARCH</label></span>
+      <span class="w3-hide-small"></span>  <div class=" bluegreeny w3-round-xlarge w3-margin"><label class=" w3-margin" style="font-size: 55px">PUBMED SEARCH</label></div>
     <p>For easy up to date information</p>
   </header>
-  <div class="w3-container w3-padding-32 w3-center"  >
+  <div class="w3-container w3-padding-32 w3-center">
       <img src="../static/coder1.gif" alt="lucas is so cute" class="w3-image w3-leftbar w3-rightbar w3-border-white " width="1600" height="600">
   </div>
 
   <!-- About Section -->
   <div class="w3-card-4 w3-theme-l3">
   <div class="w3-content w3-justify w3-padding-32 w3-margin" id="about">
-      <span class="w3-padding-24 pinky w3-opacity-min"><label class="w3-padding" style="font-size: 35px">Why this app</label></span>
-    <hr style="width:500px" class="w3-theme-l3-darkpurple">
+      <div class="w3-panel pinky w3-round-xlarge"><label style="font-size: 35px">Why this app</label></div>
+    <hr style="width:500px" class="w3-theme-l3-darkpurple w3-round-xlarge">
     <p> This tool is made for doctors everywhere to get quick up to date information on recent publications needed
         for the diagnosis of patients. Variants in genes of which the gene's -
         clinical picture / disease-characteristic associations have recently been published (Pubmed) may be missed
         in genome diagnostics with gene panel analyzes. This could cause misdiagnosis here for this tool to prevent
         doctors from making this mistake</p>
-      <span class="w3-padding-24 bluey w3-opacity-min"><label class="w3-padding" style="font-size: 35px">About this app</label></span>
+      <div class="w3-panel bluey w3-round-xlarge"><label style="font-size: 35px">About this app</label></div>
     <hr style="width:500px" class="w3-theme-l3-darkpurple">
     <p>
         Web application for identifying recently published literature association (s) of genes with disease characteristics (disease characteristics depending on selected gene panel or patient disease characteristics, starting with eg intellectual disability). Based on this, interesting variants can be searched for possible new gene - disease / disease characteristics associations which can also be used for updating gene panels. The result can be an overview of genes (HGNC symbol) and recently published articles (Pubmed references) in which an association was found with 1 or more of the entered clinical characteristics (which ?, and possibly additional clinical characteristics from the articles and e.g. inheritance form). Optionally, information from other data sources is also added in order to make a good assessment of whether a gene is a new disease gene and whether known clinical core traits match the entered clinical core traits.
@@ -97,7 +93,7 @@ body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
     <!-- Team Container -->
 <div class="w3-card-4 w3-theme-l3" >
 <div class="w3-container w3-padding-32 w3-center" id="team">
- <span class="w3-padding-24 bluegreeny w3-opacity-min"><label class="w3-padding" style="font-size: 35px">OUR TEAM</label></span>
+ <div class="darkpurpley w3-round-xlarge"><label class="" style="font-size: 35px">OUR TEAM</label></div>
 <p>Meet the team - Quarantine coders</p>
 
 <div class="w3-row"><br>
