@@ -19,7 +19,7 @@ mindate = ""
 maxdate = ""
 
 
-def main(searchList, geneList, email, searchDate, today):
+def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     print("Pubtator is zijn ding gaan doen")
     start = time.time()
     pubmedEntry.allAnnotations = {}
@@ -48,10 +48,9 @@ def main(searchList, geneList, email, searchDate, today):
     maxResults = getAmountOfResults(searchTerm)
     print("Ik heb gekeken hoeveel id's er kunnen worden opgehaald")
     # Het maximale wat kan is 500.000
-    plafond = 5000
-    if int(maxResults) > plafond:
+    if int(maxResults) > maxArticles:
         print("Ik heb ingegrepen en dit aantal naar beneden gehaald")
-        maxResults = plafond
+        maxResults = maxArticles
     # There is no need to look for results if there aren't any
     print("Het aantal mogelijke resultaten is " + str(maxResults))
     if int(maxResults) != 0:
@@ -60,7 +59,7 @@ def main(searchList, geneList, email, searchDate, today):
         print("Ik heb nu ook de id's opgehaald en ja dit printje is dubbel maar idc oke")
         # idList = idList[0:500]
         ArticleInfoRetriever(idList, searchTerm)
-    calculateScores(searchList, geneList)
+    calculateScores(searchList, geneList, organism)
     print("Dit duurt " + str(time.time() - start) + " secondes")
 
 
@@ -216,54 +215,66 @@ def getPubmedArticlesByID(idList, searchTerm):
         pubmedEntryInstance.setTitle(record.get("TI"))
 
 
-def calculateScores(searchList, geneList):
+def calculateScores(searchList, geneList, organism):
     for key, value in pubmedEntry.instancesDict.items():
         id = key
         if value.getPubtatorStatus():
             yearsAgo = datetime.today().year - value.getDatePublication().year
             try:
                 # Ik kijk hoeveel van de gevonden genen in mijn lijst staan
-                genenGevonden = list(value.getMlinfo()[id]["Gene"])
-                voorkomensTerm = 0
+                alleGevondenGenen = list(value.getMlinfo()[id]["Gene"])
+                voorkomensGezochteGen = 0
                 for gene in geneList:
-                    if gene in genenGevonden:
-                        voorkomensTerm += genenGevonden.count(gene)
-                alleTermen = len(genenGevonden)
+                    if gene in alleGevondenGenen:
+                        voorkomensGezochteGen += alleGevondenGenen.count(gene)
+                alleTermen = len(alleGevondenGenen)
             except KeyError:
-                voorkomensTerm = 0
+                voorkomensGezochteGen = 0
                 alleTermen = 0
+                alleGevondenGenen = []
 
-            searchWords = []
+            searchWordsFound = []
+            voorkomensGezochteTerm = 0
+            alleZoekTermen = 0
             # En ik kijk hoeveel van de gevonden zoektermen in mijn lijst staan
             if list(value.getMlinfo()[id].keys()).count(["Chemical"]) > 0:
-                searchWords += value.getMlinfo()[id]["Chemical"]
+                searchWordsFound += value.getMlinfo()[id]["Chemical"]
             if list(value.getMlinfo()[id].keys()).count(["Disease"]) > 0:
-                searchWords += value.getMlinfo()[id]["Disease"]
+                searchWordsFound += value.getMlinfo()[id]["Disease"]
             if list(value.getMlinfo()[id].keys()).count(["Mutation"]) > 0:
-                searchWords += value.getMlinfo()[id]["Mutation"]
+                searchWordsFound += value.getMlinfo()[id]["Mutation"]
             for word in searchList:
-                if word in searchWords:
-                    voorkomensTerm += searchWords.count(word)
-                    alleTermen += len(searchWords)
+                if word in searchWordsFound:
+                    voorkomensGezochteTerm += searchWordsFound.count(word)
+                    alleZoekTermen = len(searchWordsFound)
 
-            allValues = []
-            for mlValue in value.getMlinfo()[id].values():
-                allValues += mlValue
-
-            foundTerms = 0
-            for term in (geneList + searchList):
-                if term in allValues:
-                    foundTerms += 1
-
-            if not alleTermen == 0:
-                print(id)
-                print("score: " + str(
-                    ((voorkomensTerm / alleTermen) + (foundTerms / len(geneList + searchList)) * 2) - yearsAgo))
-                value.setScore(score=((voorkomensTerm / alleTermen) + (foundTerms / len(geneList + searchList)) * 2) - yearsAgo)
+            if not alleGevondenGenen == []:
+                aantalGenenGematcht = 0
+                for gene in geneList:
+                    if gene in alleGevondenGenen:
+                        aantalGenenGematcht += 1
             else:
-                print(id)
-                print("score: " + str((0 + (foundTerms / len(geneList + searchList)) * 2) - yearsAgo))
-                value.setScore(score=(0 + (foundTerms / len(geneList + searchList)) * 2) - yearsAgo)
+                aantalGenenGematcht = 0
+
+            aantalTermenGematcht = 0
+            for term in searchList:
+                if term in searchWordsFound:
+                    aantalTermenGematcht += 1
+
+            try:
+                if organism in value.getMlinfo()[id]["Species"]:
+                    organismeValue = 2
+                    print("organismeleef")
+                else:
+                    organismeValue = 1
+            except KeyError:
+                organismeValue = 1
+
+            print(id)
+            score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (voorkomensGezochteTerm / (alleZoekTermen + 1))
+                     + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
+                                yearsAgo + 1)
+            print("score: " + str(score))
 
 
 class pubmedEntry():
@@ -326,8 +337,7 @@ class pubmedEntry():
 
     def setScore(self, score):
         self.score = score
-        
+
     def getScore(self):
         return self.score
 
-# main(["Homo sapiens"], ["ABCD1", "Aardappel"], "annemiekeschonthaler@gmail.com", "01-01-1900", "13-05-2020")
