@@ -273,7 +273,7 @@ def calculateScores(searchList, geneList, organism):
             print(id)
             score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (voorkomensGezochteTerm / (alleZoekTermen + 1))
                      + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
-                                yearsAgo + 1)
+                                yearsAgo + 1)   
             print("score: " + str(score))
 
 
@@ -283,6 +283,7 @@ class pubmedEntry():
     __datePublication = 0
     __about = ""
     __title = ""
+    __score = None
     __withPubtator = False
     instancesDict = {}
     dictSynonyms = {}
@@ -336,8 +337,7 @@ class pubmedEntry():
         return self.__withPubtator
 
     def setScore(self, score):
-        self.score = score
+        self.__score = score
 
     def getScore(self):
-        return self.score
-
+        return self.__score
