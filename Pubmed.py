@@ -48,6 +48,7 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     maxResults = getAmountOfResults(searchTerm)
     print("Ik heb gekeken hoeveel id's er kunnen worden opgehaald")
     # Het maximale wat kan is 500.000
+    maxArticles = int(maxArticles)
     if int(maxResults) > maxArticles:
         print("Ik heb ingegrepen en dit aantal naar beneden gehaald")
         maxResults = maxArticles
@@ -273,7 +274,7 @@ def calculateScores(searchList, geneList, organism):
             print(id)
             score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (voorkomensGezochteTerm / (alleZoekTermen + 1))
                      + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
-                                yearsAgo + 1)   
+                                yearsAgo + 1)
             print("score: " + str(score))
 
 
@@ -341,3 +342,4 @@ class pubmedEntry():
 
     def getScore(self):
         return self.__score
+
