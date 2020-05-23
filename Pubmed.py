@@ -276,7 +276,7 @@ def calculateScores(searchList, geneList, organism):
                      + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
                                 yearsAgo + 1)
             print("score: " + str(score))
-            pubmedEntry.setScore(score)
+            value.setScore(score)
 
 
 class pubmedEntry():
@@ -343,4 +343,3 @@ class pubmedEntry():
 
     def getScore(self):
         return self.__score
-
