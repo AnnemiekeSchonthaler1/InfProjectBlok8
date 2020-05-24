@@ -314,20 +314,22 @@ var visitorsData = {
 		]
 	}],
     {% if 'articles' in genedic.keys() %}
-    {% for key, value in genedic['articles'].items() %}
+    {% for value in genedic['articles'].values() %}
+        {% for key, article_list in value.items() %}
 	"{{ key }}": [{
 		color: "#5be7bf",
 		name: "{{ key }}",
 		type: "column",
 		dataPoints: [
-            {% for genething, article_list in value.items() %}
+
                 {% for idk in article_list %}
 			    { label: '{{ idk.getTitle() }}', y: {{ idk.getScore() }} },
                 {% endfor %}
-            {% endfor %}
+
 		]
 	}],
     {% endfor %}
+        {% endfor %}
     {% endif %}
 
 };

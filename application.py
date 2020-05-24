@@ -100,7 +100,8 @@ def results():
         # make the graph of amount of results per gene found mmmmmm donut
 
         print("were making graphs now... this might take a while")
-        data = make_wordcloud_dataframe()
+        data = {}
+        data = make_wordcloud_dataframe(data)
         print("ik ben klaar met wordclouds maken :(")
         # dictionary with synonyms for the searchterm?
         # make a complete dictionary with all information
@@ -128,6 +129,7 @@ def make_genedic_and_count(Synonymdict):
     print("im generating the empty gene_dic")
     gene_dic = {}
     if type(Synonymdict) is list:
+        print("its a list")
         for gene in Synonymdict:
             gene_dic.update({gene: {gene: []}})
     else:
@@ -137,15 +139,29 @@ def make_genedic_and_count(Synonymdict):
                 for s in synonyms:
                     if s != '':
                         gene_dic[gene][s] = []
+    print("empty genedic",gene_dic)
     print("im starting with filling the gene_dic")
     for item in Pubmed.pubmedEntry.instancesDict.values():
         MLinfo = item.getMlinfo()
 
-        for dic in gene_dic.values():
+        for basic_gene, dic in gene_dic.items():
             for gene in dic.keys():
                 for dictionary in MLinfo.values():
-                    if 'Gene' in dictionary.keys():
-                        if gene in dictionary['Gene']:
+                    if dictionary:
+                        if 'Gene' in dictionary.keys():
+                            if gene in dictionary['Gene']:
+                                if item not in gene_dic[basic_gene][gene]:
+                                    gene_dic[basic_gene][gene].append(item)
+                                    if gene in recipe_data:
+                                        recipe_data[gene] += 1
+                                    else:
+                                        recipe_data.update({gene: 1})
+
+                    else:
+                        print("no dictionary in MLinfo  (PUBTATOR HAS FAILED US)")
+                        about = item.getAbout()
+                        if gene in about:
+                            print("THE GENE IS IN THE ABOUT THO SO PUBMED HAS NOT FAILED US")
                             if item not in gene_dic[gene][gene]:
                                 gene_dic[gene][gene].append(item)
                                 if gene in recipe_data:
@@ -165,8 +181,8 @@ def do_MATH_months(sourcedate, months):
     return datetime.date(year, month, day)
 
 
-def make_wordcloud_dataframe():
-    data = {}
+def make_wordcloud_dataframe(data):
+
     for item in Pubmed.pubmedEntry.instancesDict.values():
         starting_dic = item.getMlinfo()
         for id, dictionary in starting_dic.items():
