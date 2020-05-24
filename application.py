@@ -1,7 +1,6 @@
-import base64
+
 import calendar
 import collections
-from io import BytesIO
 
 from flask import Flask, render_template, request
 import platform
@@ -40,6 +39,7 @@ def results():
     pubmed_entries = None
     recipe_data = {}
     data = {}
+    gene_panel = None
     amount_of_articles = None
     today = datetime.date.today()
     if request.method == 'POST':
@@ -50,6 +50,8 @@ def results():
                 pub_date = value
                 search_date = do_MATH_months(today, -int(pub_date))
                 print(search_date)
+            elif key == "gene_panel":
+                gene_panel = value
 
             elif key == "disease_characteristic":
                 disease_char = value
@@ -167,7 +169,6 @@ def make_wordcloud_dataframe():
     data = {}
     for item in Pubmed.pubmedEntry.instancesDict.values():
         starting_dic = item.getMlinfo()
-        print(item.getScore())
         for id, dictionary in starting_dic.items():
             data.update({id: []})
             for type, listy in dictionary.items():
@@ -178,7 +179,6 @@ def make_wordcloud_dataframe():
                     if list_for_dic not in data[id]:
                         data[id].append(list_for_dic)
     return data
-
 
 @app.errorhandler(404)
 def page_not_found(e):

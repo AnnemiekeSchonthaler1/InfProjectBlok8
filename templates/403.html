@@ -3,19 +3,23 @@
 {% block head %}
   {{ super() }}
   <style type="text/css">
-    .important { color: #2c2c55; }
+    .important { color: #2b2b2b; }
+    .bluegreeny {color:#fff !important; background-color: #5da8a2 !important}
+    .blacky {color:#fff !important; background-color: #2b2b2b !important}
   </style>
 {% endblock %}
 {% block content %}
-  <div class="w3-card w3-white">
-  <h1>PAGE NOT FOUND</h1>
-  <p class="important">
+  <div class="w3-card w3-dark-grey w3-padding">
+  <div class="w3-container w3-margin blacky">
+      <div class="w3-panel bluegreeny w3-round-xlarge" style="width: 25%" ><h1 class="w3-text-white">PAGE NOT FOUND</h1></div>
+  </div>
+  <p class="w3-text-white w3-margin">
     I'm sorry but this URL doesn't lead anywhere...
       anyway here is a cute gif </p>
-  <p><a href="{{ url_for('hello_world') }}" class="w3-button w3-theme-l3-darkpurple" style="width:100%">Go back to HomePage</a>
+  <p><a href="{{ url_for('hello_world') }}" class="w3-button w3-margin bluegreeny" style="width:100%">Go back to HomePage</a>
       </div>
     <div class="w3-container w3-center">
-        <img src="../static/lucas.gif" class="w3-center" style="width:80%"  alt="icon">
+        <img src="../static/lucas.gif" class="w3-center" style="width:100%"  alt="icon">
     </div>
 
 {% endblock %}
