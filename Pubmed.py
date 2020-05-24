@@ -12,7 +12,6 @@ connection = mysql.connector.connect(
     db='rucia',
     user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
     password="kip")
-cursor = connection.cursor()
 
 # I make the dates global
 mindate = ""
@@ -74,6 +73,7 @@ def makeQuery(searchList, geneList, dictsynonym):
     searchTerm += " AND ({})"
 
     geneList = findSynonyms(geneList, dictsynonym)
+    print(geneList)
     # This code formulates a query
     for gene in geneList:
         searchTerm = searchTerm.format(gene + " OR {}")
@@ -86,6 +86,7 @@ def makeQuery(searchList, geneList, dictsynonym):
 def findSynonyms(geneList, dictSynonyms):
     records = ""
     try:
+        cursor = connection.cursor()
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
@@ -272,9 +273,10 @@ def calculateScores(searchList, geneList, organism):
                 organismeValue = 1
 
             print(id)
-            score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (voorkomensGezochteTerm / (alleZoekTermen + 1))
+            score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (
+                        voorkomensGezochteTerm / (alleZoekTermen + 1))
                      + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
-                                yearsAgo + 1)
+                            yearsAgo + 1)
             print("score: " + str(score))
             value.setScore(score)
 
