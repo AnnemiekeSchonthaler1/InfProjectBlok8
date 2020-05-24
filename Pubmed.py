@@ -7,11 +7,7 @@ import json
 from datetime import datetime
 
 # I make a connection with the database
-connection = mysql.connector.connect(
-    host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
-    db='rucia',
-    user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
-    password="kip")
+
 
 # I make the dates global
 mindate = ""
@@ -86,6 +82,11 @@ def makeQuery(searchList, geneList, dictsynonym):
 def findSynonyms(geneList, dictSynonyms):
     records = ""
     try:
+        connection = mysql.connector.connect(
+            host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
+            db='rucia',
+            user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
+            password="kip")
         cursor = connection.cursor()
         if connection.is_connected():
             db_Info = connection.get_server_info()
