@@ -6,12 +6,11 @@ import pubtator
 import json
 from datetime import datetime
 
-# I make a connection with the database
-
-
 # I make the dates global
 mindate = ""
 maxdate = ""
+
+geneclassDict = {}
 
 
 def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
@@ -55,7 +54,7 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
         idList = getPubmedIDs(maxResults, searchTerm)
         print("Ik heb nu ook de id's opgehaald en ja dit printje is dubbel maar idc oke")
         # idList = idList[0:500]
-        ArticleInfoRetriever(idList, searchTerm)
+        ArticleInfoRetriever(idList, searchTerm, geneList)
     calculateScores(searchList, geneList, organism)
     print("Dit duurt " + str(time.time() - start) + " secondes")
 
@@ -149,7 +148,8 @@ def readGenePanels(filename):
             print("Er mogen geen dubbele in zitten?????")
     return panels
 
-def ArticleInfoRetriever(idList, searchTerm):
+
+def ArticleInfoRetriever(idList, searchTerm, geneList):
     print("Oke ik begin met pubtator")
     allAnnotations = {}
     idList = list(idList)
@@ -174,7 +174,7 @@ def ArticleInfoRetriever(idList, searchTerm):
     pubmedEntry.allAnnotations = allAnnotations
     allAnnotationIds = set(allAnnotations.keys())
     remainingIds = remainingIds.difference(allAnnotationIds)
-    getPubmedArticlesByID(list(remainingIds), searchTerm)
+    getPubmedArticlesByID(list(remainingIds), searchTerm, geneList)
 
 
 # Deze functie haalt de nodige informatie uit het json file
@@ -208,16 +208,29 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
                             annotations[pubmedid][type] = [name]
                         else:
                             annotations[pubmedid][type].append(name)
+
                         if not type in allAnnotations[pubmedid].keys():
                             allAnnotations[pubmedid][type] = [name]
                         else:
                             if not name in allAnnotations[pubmedid][type]:
                                 allAnnotations[pubmedid][type].append(name)
+
+                        # Deze code gaat zorgen dat er een class komt met per gen artikelen bedeeld ipv andersom
+                        if type == "Gene":
+                            if not identifier in geneclassDict.keys():
+                                newGeneEntry = geneEntry(identifier)
+                                newGeneEntry.addName(name)
+                                newGeneEntry.addArticleId(pubmedid)
+                                geneclassDict[identifier] = newGeneEntry
+                            else:
+                                geneclassDict[identifier].addName(name)
+                                geneclassDict[identifier].addArticleId(pubmedid)
+
                 pubmedEntryInstance.setMLinfo(annotations)
                 pubmedEntryInstance.usedPubtator()
 
 
-def getPubmedArticlesByID(idList, searchTerm):
+def getPubmedArticlesByID(idList, searchTerm, genelist):
     print("pubtator had geen match")
     handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
                            retmode="text")
@@ -228,6 +241,18 @@ def getPubmedArticlesByID(idList, searchTerm):
         pubmedEntryInstance.setDatePublication(record.get("DP"))
         pubmedEntryInstance.setAbout(record.get("AB"))
         pubmedEntryInstance.setTitle(record.get("TI"))
+        if not record.get("AB") is None:
+            for word in record.get("AB"):
+                if word in genelist:
+                    print("Ik maak entries")
+                    if not word in geneclassDict.keys():
+                        newGeneEntry = geneEntry(word)
+                        newGeneEntry.addArticleId(record.get("PMID"))
+                        newGeneEntry.addName(name=word)
+                        geneclassDict[word] = newGeneEntry
+                    else:
+                        geneclassDict[word].addArticleId(record.get("PMID"))
+                        geneclassDict[word].addName(name=word)
 
 
 def calculateScores(searchList, geneList, organism):
@@ -294,7 +319,27 @@ def calculateScores(searchList, geneList, organism):
             value.setScore(score)
 
 
-class pubmedEntry():
+class geneEntry:
+    __names = []
+    __pubIds = []
+    __id = ""
+    instancesDict = {}
+
+    def __init__(self, genId):
+        print("init")
+        self.__id = genId
+        self.instancesDict[genId] = self
+
+    def addName(self, name):
+        if not name in self.__names:
+            self.__names.append(name)
+
+    def addArticleId(self, pubId):
+        if not pubId in self.__pubIds:
+            self.__pubIds.append(pubId)
+
+
+class pubmedEntry:
     # The __ make this a private attribute to encapsulate it
     __geneID = ""
     __datePublication = 0
