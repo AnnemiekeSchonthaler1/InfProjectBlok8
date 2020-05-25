@@ -37,6 +37,7 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     # searchTerm contains this query
     searchTerm, geneList = makeQuery(searchList, geneList, dictSynonyms)
 
+    readGenePanels("C:\\Users\Gebruiker\\Documents\\School\\Blok 8\\Blok 8 - project\InfProjectBlok8\\genePanel")
     print("De query is ook geformuleerd")
 
     # I look for articles with the formulated query
@@ -136,6 +137,17 @@ def getPubmedIDs(maxResults, searchTerm):
     print("got id's")
     return idlist
 
+
+def readGenePanels(filename):
+    panels = {}
+    for regel in open(filename, "r").readlines():
+        gene = regel.split("\t")[0]
+        panel = regel.split("\t")[1]
+        if not gene in panels.keys():
+            panels[gene] = [panel]
+        else:
+            print("Er mogen geen dubbele in zitten?????")
+    return panels
 
 def ArticleInfoRetriever(idList, searchTerm):
     print("Oke ik begin met pubtator")
@@ -275,7 +287,7 @@ def calculateScores(searchList, geneList, organism):
 
             print(id)
             score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (
-                        voorkomensGezochteTerm / (alleZoekTermen + 1))
+                    voorkomensGezochteTerm / (alleZoekTermen + 1))
                      + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
                             yearsAgo + 1)
             print("score: " + str(score))
@@ -293,6 +305,7 @@ class pubmedEntry():
     instancesDict = {}
     dictSynonyms = {}
     __MLinfo = {}
+
     allAnnotations = {}
     ML_single = {}
 
