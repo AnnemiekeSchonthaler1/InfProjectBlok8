@@ -35,8 +35,6 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     # I call a function to formulate a query
     # searchTerm contains this query
     searchTerm, geneList = makeQuery(searchList, geneList, dictSynonyms)
-
-    readGenePanels("C:\\Users\Gebruiker\\Documents\\School\\Blok 8\\Blok 8 - project\InfProjectBlok8\\genePanel")
     print("De query is ook geformuleerd")
 
     # I look for articles with the formulated query
