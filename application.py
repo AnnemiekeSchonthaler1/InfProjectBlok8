@@ -42,6 +42,7 @@ def results():
     gene_panel = None
     amount_of_articles = None
     today = datetime.date.today()
+    csv_data = ""
     if request.method == 'POST':
         print("hi i got to the loop to digest data")
         result = request.form
@@ -113,7 +114,9 @@ def results():
     # Embed the result in the html output.
         print("genereer pagina nu maar... hopelijk")
         print(data)
-    return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic, recipe_dict=recipe_data, entries=pubmed_entries, data=data)
+        csv_data = make_csv_data(infodic)
+
+    return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic, recipe_dict=recipe_data, entries=pubmed_entries, data=data, csv_data=csv_data)
 
 
 def most_frequent(List):
@@ -162,8 +165,8 @@ def make_genedic_and_count(Synonymdict):
                         about = item.getAbout()
                         if gene in about:
                             print("THE GENE IS IN THE ABOUT THO SO PUBMED HAS NOT FAILED US")
-                            if item not in gene_dic[gene][gene]:
-                                gene_dic[gene][gene].append(item)
+                            if item not in gene_dic[basic_gene][gene]:
+                                gene_dic[basic_gene][gene].append(item)
                                 if gene in recipe_data:
                                     recipe_data[gene] += 1
                                 else:
@@ -195,6 +198,41 @@ def make_wordcloud_dataframe(data):
                     if list_for_dic not in data[id]:
                         data[id].append(list_for_dic)
     return data
+def make_csv_data(data):
+    sentence = []
+    thing = ['','','','','']
+    for id, dic in data.items():
+        thing = ['', '', '', '', '']
+        thing[0] = id
+        if 'Gene' in dic.keys():
+            thing[1] = "/".join(dic['Gene'])
+        else:
+            thing[1] = ' '
+        if 'Mutation' in dic.keys():
+            thing[2] = "/".join(dic['Mutation'])
+        else:
+            thing[2] = ' '
+        if 'Disease' in dic.keys():
+            thing[3] = "/".join(dic['Disease'])
+        else:
+            thing[3] = ' '
+        if 'Species' in dic.keys():
+            thing[4] = "/".join(dic['Species'])
+        else:
+            thing[4] = ' '
+        thing = ", ".join(thing)
+        sentence.append(thing)
+    sentence = "\n".join(sentence)
+    sentence = [sentence]
+        #thing.append(id)
+        #for type, list in dic.items():
+            #thing.append("/".join(list))
+        #" , ".join(thing)
+        #thing += "\n"
+
+    print(sentence)
+
+    return sentence
 
 @app.errorhandler(404)
 def page_not_found(e):

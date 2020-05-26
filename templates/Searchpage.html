@@ -28,6 +28,12 @@
 .darkpurpley {color:#fff !important; background-color: #3d3479 !important}
 
 body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
+#div1 {
+  width: 350px;
+  height: 70px;
+  padding: 10px;
+  border: 1px solid #aaaaaa;
+}
 .w3-row-padding img {margin-bottom: 12px}
 /* Set the width of the sidebar to 120px */
 .w3-sidebar {width: 120px;background: #2b2b2b;}
@@ -114,7 +120,7 @@ th {
   <div class="w3-container w3-theme-l3 w3-padding">
       <div class="w3-panel bluey w3-round-xlarge" style="width: 200px;"><h2 class="w3-wide" style="font-size: 30px;">Search</h2></div>
   </div>
-  <form class="w3-container " method="post" action="https://hannl-hlo-bi2a1-app.azurewebsites.net/result">
+  <form class="w3-container " method="post" action="http://127.0.0.1:5000/result">
     <p>
     <label class="w3-text-black"><b>disease-characteristics</b></label>
     <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
@@ -169,6 +175,7 @@ th {
   </form>
 </div>
      <!--  end FORM -->
+
  <!-- start Results  link to pubmed article https://www.ncbi.nlm.nih.gov/pubmed/?term= item.pubmedId-->
     <div class="w3-card-4 w3-white w3-section">
   <div class="w3-container w3-theme-l3">
@@ -203,9 +210,11 @@ th {
         {% if"articles" in genedic.keys() %}
      {% for name, gene in genedic["articles"].items()%}
 
-         <div class = "w3-container w3-white, w3-margin">
-
-
+         <div class = "w3-cell-row w3-container w3-white, w3-margin" style="width: 100%">
+            <div id="div1" class="w3-cell" style="width: 10%; height: 100%" ondrop="drop(event)" ondragover="allowDrop(event)">
+                 <input class="w3-btn w3-dark-grey w3-wide " type="button" value="Download selection" onclick="download_csv()">
+            </div>
+            <div class="w3-cell" style="width: 90%">
              <button onclick="myFunction('{{name }}')" class="w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
             <div id="{{name }}" class="w3-container w3-hide  w3-animate-opacity">
@@ -234,11 +243,13 @@ th {
                             <div class=" w3-button w3-left"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{item.getTitle()}}</a></div>
                         <div class="w3-button w3-right w3-border w3-opaque" onclick="document.getElementById({{ item.pubmedID }}).style.display='block'"> more info</div>
                         </div>
+                        <div class="w3-panel w3-border w3-round-xlarge" style="width: 200px; height: 60px" id="{{ item.pubmedID+" "+genename }}" draggable="true" ondragstart="drag(event)">{{ item.pubmedID }} <img src="../static/Spooder.png" style="width:100px;height: 50px" alt="icon"></div>
                         </li>
                     {% endfor %}
                 {% endfor %}
               </ul>
             </div>
+         </div>
          </div>
      {% endfor %}
     {% endif %}
@@ -443,6 +454,41 @@ $(function() {
     });
   $('[href=#]').click(function(){return false});
 });
+</script>
+
+<script>
+function allowDrop(ev) {
+  ev.preventDefault();
+}
+
+function drag(ev) {
+  ev.dataTransfer.setData("text", ev.target.id);
+}
+
+function drop(ev) {
+  ev.preventDefault();
+  var data = ev.dataTransfer.getData("text");
+  ev.target.appendChild(document.getElementById(data));
+
+}
+</script>
+<script>
+var jsArrayOfItems = {{csv_data | safe}};
+
+
+function download_csv() {
+    var csv = 'ID,Gene,Mutations,Diseases,Species\n';
+    alert(jsArrayOfItems);
+
+    csv = csv + jsArrayOfItems;
+
+    console.log(csv);
+    var hiddenElement = document.createElement('a');
+    hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+    hiddenElement.target = '_blank';
+    hiddenElement.download = 'all_articles.txt';
+    hiddenElement.click();
+}
 </script>
 </body>
 </html>
