@@ -95,6 +95,10 @@ th {
     <i class="fa fa-search w3-xxlarge"></i>
     <p>SEARCH</p>
   </a>
+    <a onclick="download_csv()" class="w3-round-xlarge w3-wide w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar  w3-border-white darkpurpley w3-hover-white w3-section">
+    <i class="fa fa-download w3-xxlarge"></i>
+    <p style="font-size: 10px">Download</p>
+  </a>
 
 </nav>
 
@@ -211,9 +215,7 @@ th {
      {% for name, gene in genedic["articles"].items()%}
 
          <div class = "w3-cell-row w3-container w3-white, w3-margin" style="width: 100%">
-            <div id="div1" class="w3-cell" style="width: 10%; height: 100%" ondrop="drop(event)" ondragover="allowDrop(event)">
-                 <input class="w3-btn w3-dark-grey w3-wide " type="button" value="Download selection" onclick="download_csv()">
-            </div>
+            <div id="div1" class="w3-cell" style="width: 10%; height: 100%" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
             <div class="w3-cell" style="width: 90%">
              <button onclick="myFunction('{{name }}')" class="w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
