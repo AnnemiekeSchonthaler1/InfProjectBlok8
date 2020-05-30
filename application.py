@@ -35,8 +35,8 @@ def results():
     plot_url = ""
     search_list = []
     URL_dic = {}
-    infodic={}
-    pubmed_entries = None
+    infodic= {}
+    pubmed_entries = {}
     recipe_data = {}
     data = {}
     gene_panel = None
@@ -115,7 +115,7 @@ def results():
         print("genereer pagina nu maar... hopelijk")
         print(data)
         csv_data = make_csv_data(infodic)
-
+        print(infodic)
     return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic, recipe_dict=recipe_data, entries=pubmed_entries, data=data, csv_data=csv_data)
 
 

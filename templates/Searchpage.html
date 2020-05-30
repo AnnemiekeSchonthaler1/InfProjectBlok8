@@ -211,15 +211,19 @@ th {
         </div>
         {% endif %}
     </div>
+    <div class="w3-bar w3-theme-l3">
+  <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink pinky" onclick="openCity(event,'Visual')">Visualised data</button>
+  <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink " onclick="openCity(event,'Table')">Table of results</button>
+    </div>
+    <div id="Visual" class="w3-container city">
         {% if"articles" in genedic.keys() %}
      {% for name, gene in genedic["articles"].items()%}
 
          <div class = "w3-cell-row w3-container w3-white, w3-margin" style="width: 100%">
-            <div id="div1" class="w3-cell" style="width: 10%; height: 100%" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
             <div class="w3-cell" style="width: 90%">
-             <button onclick="myFunction('{{name }}')" class="w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
+             <button onclick="myopen('{{name }}')" class="w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
-            <div id="{{name }}" class="w3-container w3-hide  w3-animate-opacity">
+            <div id='{{name }}' class="w3-container w3-hide  w3-animate-opacity">
         {%for omim_name, omim_id in genedic["omim_id"].items() %}
         {%if name == omim_name %}
             <div class="w3-container">
@@ -245,7 +249,6 @@ th {
                             <div class=" w3-button w3-left"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{item.getTitle()}}</a></div>
                         <div class="w3-button w3-right w3-border w3-opaque" onclick="document.getElementById({{ item.pubmedID }}).style.display='block'"> more info</div>
                         </div>
-                        <div class="w3-panel w3-border w3-round-xlarge" style="width: 200px; height: 60px" id="{{ item.pubmedID+" "+genename }}" draggable="true" ondragstart="drag(event)">{{ item.pubmedID }} <img src="../static/Spooder.png" style="width:100px;height: 50px" alt="icon"></div>
                         </li>
                     {% endfor %}
                 {% endfor %}
@@ -255,6 +258,61 @@ th {
          </div>
      {% endfor %}
     {% endif %}
+    </div>
+    <div id="Table" class="w3-container city" style="display:none">
+        <input type="text" class="w3-margin w3-border" style="width: 25%" id="myInput3" onkeyup="myFunction(3)" placeholder="Search for Gene.." title="Type in a Gene">
+        <input type="text" class="w3-margin w3-border" style="width: 25%" id="myInput4" onkeyup="myFunction(4)" placeholder="Search for Disease.." title="Type in a Disease">
+        <div class="w3-responsive">
+              <table id="table" style="width: 100%;" class="sortable w3-table-all w3-text-black w3-margin w3-hoverable">
+              <thead>
+                <tr>
+                  <th>Pubmed-ID</th>
+                  <th>Score</th>
+                  <th>Publication date</th>
+                  <th>Genes</th>
+                  <th>Diseases</th>
+                  <th>Mutations</th>
+                  <th>Species</th>
+                </tr>
+              </thead>
+                  {% for id, object  in entries.items() %}
+                <tr>
+                  <td>{{ id }}</td>
+                  <td>{{ object.getScore() }}</td>
+                  <td>{{ object.getDatePublication() }}</td>
+                {% if id in infodic.keys() %}
+                      {% if "Gene" in infodic[id].keys() %}
+                      <td>{{ infodic[id]["Gene"] }}</td>
+                          {% else %}
+                          <td> None </td>
+                          {% endif %}
+                      {% if "Disease" in infodic[id].keys() %}
+                      <td>{{ infodic[id]["Disease"] }}</td>
+                          {% else %}
+                          <td> None </td>
+                          {% endif %}
+                      {% if "Mutation" in infodic[id].keys() %}
+                      <td>{{ infodic[id]["Mutation"] }}</td>
+                          {% else %}
+                          <td> None </td>
+                          {% endif %}
+                      {% if "Species" in infodic[id].keys() %}
+                      <td>{{ infodic[id]["Species"] }}</td>
+                          {% else %}
+                          <td> None </td>
+                          {% endif %}
+                    {% else %}
+                        <td> None</td>
+                        <td> None</td>
+                        <td> None</td>
+                        <td> None</td>
+                 {% endif %}
+                </tr>
+                  {% endfor %}
+
+              </table>
+        </div>
+    </div>
     </div>
 
 {% for id, dic in infodic.items() %}
@@ -274,7 +332,7 @@ th {
           <div class="w3-container w3-cell w3-margin w3-border">
           {% for name, list in dic.items()%}
               {% if name != id %}
-            <button onclick="myFunction('{{ id+name }}')" class=" w3-wide w3-button w3-round-xlarge w3-block w3-left-align darkpurpley w3-margin-top">
+            <button onclick="myopen('{{ id+name }}')" class=" w3-wide w3-button w3-round-xlarge w3-block w3-left-align darkpurpley w3-margin-top">
             {{ name }}  <i class='fas fa-angle-down'></i></button>
             <div id="{{ id+name }}" class="w3-container w3-hide">
                 {% for value in list %}
@@ -296,7 +354,7 @@ th {
 {% endfor %}
 </div>
 <script>
-function myFunction(id) {
+function myopen(id) {
     const x = document.getElementById(id);
     if (x.className.indexOf("w3-show") === -1) {
     x.className += " w3-show";
@@ -490,6 +548,44 @@ function download_csv() {
     hiddenElement.target = '_blank';
     hiddenElement.download = 'all_articles.txt';
     hiddenElement.click();
+}
+</script>
+<script>
+function openCity(evt, cityName) {
+  var i, x, tablinks;
+  x = document.getElementsByClassName("city");
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablink");
+  for (i = 0; i < x.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" pinky", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " pinky";
+}
+</script>
+<script>
+function myFunction(col_num) {
+  var input, filter, table, tr, td, i, txtValue;
+  if (col_num === 3){
+  input = document.getElementById("myInput3");}
+  if (col_num === 4){
+  input = document.getElementById("myInput4");}
+  filter = input.value.toUpperCase();
+  table = document.getElementById("table");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[col_num];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
 }
 </script>
 </body>
