@@ -324,7 +324,7 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
 
     maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
 
-    score = ((voorkomensTermen/alleTermenVoorkomens) + (len(termsList)/len(alleTermen)) + 1)/(monthsAgo/maxMonthsAgo+1)
+    score = ((voorkomensTermen/alleTermenVoorkomens+1) + (len(termsList)/len(alleTermen)+1))/((monthsAgo/maxMonthsAgo)+1)
     print("score: "+str(score))
     # for key, value in pubmedEntry.instancesDict.items():
     #     id = key
@@ -471,3 +471,4 @@ class pubmedEntry:
 
     def getScore(self):
         return self.__score
+
