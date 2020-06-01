@@ -11,9 +11,17 @@ mindate = ""
 maxdate = ""
 
 geneclassDict = {}
-
+alleTermen = []
 
 def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
+    # Zodat de dict bij elke run wordt geleegd
+    global geneclassDict
+    global alleTermen
+    geneclassDict = {}
+    alleTermen = []
+
+    searchList.append(organism)
+
     print("Pubtator is zijn ding gaan doen")
     start = time.time()
     pubmedEntry.allAnnotations = {}
@@ -35,6 +43,7 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     # I call a function to formulate a query
     # searchTerm contains this query
     searchTerm, geneList = makeQuery(searchList, geneList, dictSynonyms)
+
     print("De query is ook geformuleerd")
 
     # I look for articles with the formulated query
@@ -52,8 +61,7 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
         idList = getPubmedIDs(maxResults, searchTerm)
         print("Ik heb nu ook de id's opgehaald en ja dit printje is dubbel maar idc oke")
         # idList = idList[0:500]
-        ArticleInfoRetriever(idList, searchTerm, geneList)
-    calculateScores(searchList, geneList, organism)
+        ArticleInfoRetriever(idList, searchTerm, geneList, searchList)
     print("Dit duurt " + str(time.time() - start) + " secondes")
 
 
@@ -82,9 +90,9 @@ def findSynonyms(geneList, dictSynonyms):
     try:
         connection = mysql.connector.connect(
             host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
-            db='rucia',
-            user='rucia@hannl-hlo-bioinformatica-mysqlsrv',
-            password="kip")
+            db='owe7_pg1',
+            user='owe7_pg1@hannl-hlo-bioinformatica-mysqlsrv',
+            password="blaat1234")
         cursor = connection.cursor()
         if connection.is_connected():
             db_Info = connection.get_server_info()
@@ -126,6 +134,7 @@ def getAmountOfResults(searchTerm):
 
 
 def getPubmedIDs(maxResults, searchTerm):
+    print(mindate, maxdate)
     handle = Entrez.esearch(db="pubmed", term=searchTerm, retmax=maxResults, datetype='pdat', mindate=mindate,
                             maxdate=maxdate)
     record = Entrez.read(handle)
@@ -147,7 +156,7 @@ def readGenePanels(filename):
     return panels
 
 
-def ArticleInfoRetriever(idList, searchTerm, geneList):
+def ArticleInfoRetriever(idList, searchTerm, geneList, searchList):
     print("Oke ik begin met pubtator")
     allAnnotations = {}
     idList = list(idList)
@@ -161,12 +170,12 @@ def ArticleInfoRetriever(idList, searchTerm, geneList):
             output = pubtator.SubmitPMIDList(idList[i - slice:i], "biocjson",
                                              "gene, disease, chemical, species, proteinmutation, dnamutation")
             if not output is None:
-                articleInfoProcessor(output, searchTerm, allAnnotations)
+                articleInfoProcessor(output, searchTerm, allAnnotations, geneList, searchList)
     else:
         output = pubtator.SubmitPMIDList(idList, "biocjson",
                                          "gene, disease, chemical, species, proteinmutation, dnamutation")
         if not output is None:
-            articleInfoProcessor(output, searchTerm, allAnnotations)
+            articleInfoProcessor(output, searchTerm, allAnnotations, geneList, searchList)
 
     print("En ik ben klaar met pubtator")
     pubmedEntry.allAnnotations = allAnnotations
@@ -176,10 +185,12 @@ def ArticleInfoRetriever(idList, searchTerm, geneList):
 
 
 # Deze functie haalt de nodige informatie uit het json file
-def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
+def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations, geneList, searchList):
     # todo stop dit allemaal in de database
     if not len(pubtatoroutput) == 0:
         for entry in pubtatoroutput.split("\n"):
+            # {identifier:[[names], count]}
+            accessionDict = {}
             annotations = {}
             # Hij mag niet leeg zijn want anders wordt json boos
             if not len(entry) == 0:
@@ -193,15 +204,35 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
                 author = y["authors"]
                 pubmedEntryInstance = pubmedEntry(pubmedid, searchTerm, author)
                 pubmedEntryInstance.setDatePublication(datePublished)
+                # Dit bevat de accessiecodes van de gezochte termen gevonden in de artikelen
+                termsList = []
                 for passage in y["passages"]:
                     if passage["infons"]["type"] == "title":
                         pubmedEntryInstance.setTitle(passage["text"])
                     elif passage["infons"]["type"] == "abstract":
                         pubmedEntryInstance.setAbout(passage["text"])
                     for annotation in passage["annotations"]:
+                        # Dit is voor de termen die hij heeft gevonen
                         name = annotation["text"]
                         identifier = annotation["infons"]["identifier"]
                         type = annotation["infons"]["type"]
+
+                        if name in geneList or name in searchList:
+                            if not identifier in termsList:
+                                termsList.append(identifier)
+                                if not identifier in alleTermen:
+                                    alleTermen.append(identifier)
+
+                        # zodat er een score kan worden berekend
+                        if not identifier in accessionDict.keys():
+                            accessionDict[identifier] = [[name],1]
+                        else:
+                            if not name in accessionDict[identifier][0]:
+                                accessionDict[identifier][0].append(name)
+                            accessionDict[identifier][1] += 1
+
+
+                        # Ik stop het in de twee dicts
                         if not type in annotations[pubmedid].keys():
                             annotations[pubmedid][type] = [name]
                         else:
@@ -226,6 +257,7 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations):
 
                 pubmedEntryInstance.setMLinfo(annotations)
                 pubmedEntryInstance.usedPubtator()
+                pubmedEntryInstance.setScore(calculateScores(termsList, accessionDict, pubmedEntryInstance))
 
 
 def getPubmedArticlesByID(idList, searchTerm, genelist):
@@ -253,69 +285,106 @@ def getPubmedArticlesByID(idList, searchTerm, genelist):
                         geneclassDict[word].addName(name=word)
 
 
-def calculateScores(searchList, geneList, organism):
-    for key, value in pubmedEntry.instancesDict.items():
-        id = key
-        if value.getPubtatorStatus():
-            yearsAgo = datetime.today().year - value.getDatePublication().year
-            try:
-                # Ik kijk hoeveel van de gevonden genen in mijn lijst staan
-                alleGevondenGenen = list(value.getMlinfo()[id]["Gene"])
-                voorkomensGezochteGen = 0
-                for gene in geneList:
-                    if gene in alleGevondenGenen:
-                        voorkomensGezochteGen += alleGevondenGenen.count(gene)
-                alleTermen = len(alleGevondenGenen)
-            except KeyError:
-                voorkomensGezochteGen = 0
-                alleTermen = 0
-                alleGevondenGenen = []
+def calculateScores(termsList, accessionDict, pubmedInstance):
+    # dit zijn alle termen die voorkomen in alle artikelen
+    print("alleTermen: ", alleTermen)
+    # dit zijn de termen die voorkomen in dit artikel
+    print("termslist: ", termsList)
+    # Dit zijn alle termen die voorkomen in het artikel met hun count ({accessie:[namen, count]})
+    print("accessionDict: ",accessionDict)
+    print("Matchende object:")
+    voorkomensTermen = 0
+    for item in alleTermen:
+        if item in accessionDict.keys():
+            aantalvoorkomensItem = accessionDict.get(item)[1]
+            voorkomensTermen += aantalvoorkomensItem
+    print("voorkomensTermen: ", voorkomensTermen)
 
-            searchWordsFound = []
-            voorkomensGezochteTerm = 0
-            alleZoekTermen = 0
-            # En ik kijk hoeveel van de gevonden zoektermen in mijn lijst staan
-            if list(value.getMlinfo()[id].keys()).count(["Chemical"]) > 0:
-                searchWordsFound += value.getMlinfo()[id]["Chemical"]
-            if list(value.getMlinfo()[id].keys()).count(["Disease"]) > 0:
-                searchWordsFound += value.getMlinfo()[id]["Disease"]
-            if list(value.getMlinfo()[id].keys()).count(["Mutation"]) > 0:
-                searchWordsFound += value.getMlinfo()[id]["Mutation"]
-            for word in searchList:
-                if word in searchWordsFound:
-                    voorkomensGezochteTerm += searchWordsFound.count(word)
-                    alleZoekTermen = len(searchWordsFound)
+    alleTermenVoorkomens = 0
+    for value in accessionDict.values():
+        alleTermenVoorkomens += value[1]
 
-            if not alleGevondenGenen == []:
-                aantalGenenGematcht = 0
-                for gene in geneList:
-                    if gene in alleGevondenGenen:
-                        aantalGenenGematcht += 1
-            else:
-                aantalGenenGematcht = 0
+    for item in termsList:
+        print("item:", item)
 
-            aantalTermenGematcht = 0
-            for term in searchList:
-                if term in searchWordsFound:
-                    aantalTermenGematcht += 1
 
-            try:
-                if organism in value.getMlinfo()[id]["Species"]:
-                    organismeValue = 2
-                    print("organismeleef")
-                else:
-                    organismeValue = 1
-            except KeyError:
-                organismeValue = 1
 
-            print(id)
-            score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (
-                    voorkomensGezochteTerm / (alleZoekTermen + 1))
-                     + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
-                            yearsAgo + 1)
-            print("score: " + str(score))
-            value.setScore(score)
+    #print(pubmedInstance)
+    yearsAgo = datetime.today().year - pubmedInstance.getDatePublication().year
+    today = datetime.today()
+    then = pubmedInstance.getDatePublication()
+    monthsAgo = (today.year - then.year) * 12 + (today.month - then.month)
+    print(monthsAgo)
 
+    global maxdate
+    print(maxdate)
+    maxdateSplit = maxdate.split("/")
+    maxdateFormatted = datetime.datetime(maxdateSplit[0], maxdateSplit[1], maxdateSplit[2])
+
+    maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
+
+    score = ((voorkomensTermen/alleTermenVoorkomens) + (len(termsList)/len(alleTermen)))/(monthsAgo/maxMonthsAgo)
+    print("score: "+str(score))
+    # for key, value in pubmedEntry.instancesDict.items():
+    #     id = key
+    #     if value.getPubtatorStatus():
+    #         yearsAgo = datetime.today().year - value.getDatePublication().year
+    #         try:
+    #             # Ik kijk hoeveel van de gevonden genen in mijn lijst staan
+    #             alleGevondenGenen = list(value.getMlinfo()[id]["Gene"])
+    #             voorkomensGezochteGen = 0
+    #             for gene in geneList:
+    #                 if gene in alleGevondenGenen:
+    #                     voorkomensGezochteGen += alleGevondenGenen.count(gene)
+    #             alleTermen = len(alleGevondenGenen)
+    #         except KeyError:
+    #             voorkomensGezochteGen = 0
+    #             alleTermen = 0
+    #             alleGevondenGenen = []
+    #
+    #         searchWordsFound = []
+    #         voorkomensGezochteTerm = 0
+    #         alleZoekTermen = 0
+    #         # En ik kijk hoeveel van de gevonden zoektermen in mijn lijst staan
+    #         if list(value.getMlinfo()[id].keys()).count(["Chemical"]) > 0:
+    #             searchWordsFound += value.getMlinfo()[id]["Chemical"]
+    #         if list(value.getMlinfo()[id].keys()).count(["Disease"]) > 0:
+    #             searchWordsFound += value.getMlinfo()[id]["Disease"]
+    #         if list(value.getMlinfo()[id].keys()).count(["Mutation"]) > 0:
+    #             searchWordsFound += value.getMlinfo()[id]["Mutation"]
+    #         for word in searchList:
+    #             if word in searchWordsFound:
+    #                 voorkomensGezochteTerm += searchWordsFound.count(word)
+    #                 alleZoekTermen = len(searchWordsFound)
+    #
+    #         if not alleGevondenGenen == []:
+    #             aantalGenenGematcht = 0
+    #             for gene in geneList:
+    #                 if gene in alleGevondenGenen:
+    #                     aantalGenenGematcht += 1
+    #         else:
+    #             aantalGenenGematcht = 0
+    #
+    #         aantalTermenGematcht = 0
+    #         for term in searchList:
+    #             if term in searchWordsFound:
+    #                 aantalTermenGematcht += 1
+    #
+    #         try:
+    #             if organism in value.getMlinfo()[id]["Species"]:
+    #                 organismeValue = 2
+    #                 print("organismeleef")
+    #             else:
+    #                 organismeValue = 1
+    #         except KeyError:
+    #             organismeValue = 1
+    #
+    #         score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (
+    #                 voorkomensGezochteTerm / (alleZoekTermen + 1))
+    #                  + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
+    #                         yearsAgo + 1)
+    #         value.setScore(score)
+    return score
 
 class geneEntry:
     __names = []
@@ -324,7 +393,6 @@ class geneEntry:
     instancesDict = {}
 
     def __init__(self, genId):
-        print("init")
         self.__id = genId
         self.instancesDict[genId] = self
 
