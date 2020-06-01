@@ -5,6 +5,7 @@ from mysql.connector import Error
 import pubtator
 import json
 from datetime import datetime
+from datetime import date
 
 # I make the dates global
 mindate = ""
@@ -319,7 +320,7 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
     global maxdate
     print(maxdate)
     maxdateSplit = maxdate.split("/")
-    maxdateFormatted = datetime.datetime(maxdateSplit[0], maxdateSplit[1], maxdateSplit[2])
+    maxdateFormatted = date(int(maxdateSplit[0]), int(maxdateSplit[1]), int(maxdateSplit[2]))
 
     maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
 
