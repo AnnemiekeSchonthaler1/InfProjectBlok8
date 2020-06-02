@@ -318,7 +318,7 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
     print(monthsAgo)
 
     global mindate
-    print(mindate)
+    print("mindate",mindate)
     maxdateSplit = mindate.split("/")
     maxdateFormatted = date(int(maxdateSplit[0]), int(maxdateSplit[1]), int(maxdateSplit[2]))
 
