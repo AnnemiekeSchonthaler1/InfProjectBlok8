@@ -15,6 +15,7 @@ geneclassDict = {}
 alleTermen = []
 
 def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
+    print(searchList, geneList, email, searchDate, today, organism, maxArticles)
     # Zodat de dict bij elke run wordt geleegd
     global geneclassDict
     global alleTermen
