@@ -1,4 +1,3 @@
-
 import calendar
 import collections
 
@@ -9,6 +8,7 @@ import datetime
 import Omim
 import Pubmed
 from collections import Counter
+import re
 
 app = Flask(__name__)
 
@@ -35,7 +35,7 @@ def results():
     plot_url = ""
     search_list = []
     URL_dic = {}
-    infodic= {}
+    infodic = {}
     pubmed_entries = {}
     recipe_data = {}
     data = {}
@@ -49,6 +49,8 @@ def results():
         for key, value in result.items():
             if key == "publication_date":
                 pub_date = value
+                if pub_date == "2":
+                    pub_date = "3"
                 search_date = do_MATH_months(today, -int(pub_date))
                 print(search_date)
             elif key == "gene_panel":
@@ -74,6 +76,7 @@ def results():
                         gene_list.append(thing)
 
         print("hi ik roep pubmed nu aan")
+        print(search_date)
         Pubmed.main(searchList=search_list, geneList=gene_list, email=mail, searchDate=search_date, today=today,
                     organism=organism, maxArticles=amount_of_articles)
         print("ik haal nu de annotaties op")
@@ -96,7 +99,7 @@ def results():
             Synonymdict = gene_list
         # make a dictionary to save the counts and the articles per gene
         print("hmmm we gaan nu ff door met een counter en het genedic in elkaar zetten")
-        gene_dic, recipe_data = make_genedic_and_count(Synonymdict)
+        gene_dic, recipe_data, infodic = make_genedic_and_count(Synonymdict,infodic)
 
         # make the graph of amount of results per gene found mmmmmm donut
 
@@ -111,23 +114,24 @@ def results():
         full_dicy.update({"omim_id": omim_ids})
         full_dicy.update({"amount_found": recipe_data})
         print("volledig dicy ", full_dicy)
-    # Embed the result in the html output.
+        # Embed the result in the html output.
         print("genereer pagina nu maar... hopelijk")
         print(data)
         csv_data = make_csv_data(infodic)
         print(infodic)
-    return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic, recipe_dict=recipe_data, entries=pubmed_entries, data=data, csv_data=csv_data)
+    return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic,
+                           recipe_dict=recipe_data, entries=pubmed_entries, data=data, csv_data=csv_data)
 
 
 def most_frequent(List):
     occurence_count = Counter(List)
     return occurence_count.most_common(1)[0][0]
 
-def make_genedic_and_count(Synonymdict):
 
-    #{gene : count}
+def make_genedic_and_count(Synonymdict, infodic):
+    # {gene : count}
     recipe_data = {}
-    #{gene : {gene: [article_entery,...], synonym_of_Gene : [article entery]} gene : {gene: []}
+    # {gene : {gene: [article_entery,...], synonym_of_Gene : [article entery]} gene : {gene: []}
     annotation_dic = Pubmed.pubmedEntry.allAnnotations
     print("im generating the empty gene_dic")
     gene_dic = {}
@@ -142,37 +146,64 @@ def make_genedic_and_count(Synonymdict):
                 for s in synonyms:
                     if s != '':
                         gene_dic[gene][s] = []
-    print("empty genedic",gene_dic)
+    print("empty genedic", gene_dic)
     print("im starting with filling the gene_dic")
     for item in Pubmed.pubmedEntry.instancesDict.values():
         MLinfo = item.getMlinfo()
-
-        for basic_gene, dic in gene_dic.items():
-            for gene in dic.keys():
-                for dictionary in MLinfo.values():
-                    if dictionary:
+        if MLinfo:
+            for basic_gene, dic in gene_dic.items():
+                for gene in dic.keys():
+                    for dictionary in MLinfo.values():
                         if 'Gene' in dictionary.keys():
                             if gene in dictionary['Gene']:
                                 if item not in gene_dic[basic_gene][gene]:
                                     gene_dic[basic_gene][gene].append(item)
                                     if gene in recipe_data:
-                                        recipe_data[gene] += 1
+                                        recipe_data[gene][0] += 1
                                     else:
-                                        recipe_data.update({gene: 1})
+                                        recipe_data.update({gene: [1, []]})
 
+        else:
+            item.setScore(-1)
+            gene_found = []
+            annotations = {}
+            print("no dictionary in MLinfo  (PUBTATOR HAS FAILED US)")
+            about = item.getAbout()
+            id = item.pubmedID
+            x = re.findall('[A-Z0-9]*', about)
+            for value in x:
+                if len(value) > 1 and x.count(
+                        value) > 1 and value != "DNA" and value != "RNA" and value.isdigit() is False and value not in gene_found:
+                    if "({})".format(value) not in about and "({}s)".format(value) not in about:
+                        gene_found.append(value)
+                        annotations.update({id: {"Gene": gene_found}})
+                        item.setMLinfo(annotations)
+                        infodic.update({id: {"Gene": gene_found}})
+                        #print(item.getMlinfo())
+                        for gene_name in gene_found:
+                            if gene_name in recipe_data:
+                                recipe_data[gene_name][0] += 1
+                            else:
+                                recipe_data.update({gene_name: [1, []]})
+                            if gene_name not in gene_dic.keys():
+                                print(gene_name)
+                                gene_dic.update({gene_name: {gene_name: [item]}})
+                            else:
+                                print("already in there")
+                                if item not in gene_dic[gene_name][gene_name]:
+                                    gene_dic[gene_name][gene_name].append(item)
+                                    print(gene_dic)
+            # print(gene_found)
+            """if gene in about:
+                print("THE GENE IS IN THE ABOUT THO SO PUBMED HAS NOT FAILED US")
+                if item not in gene_dic[basic_gene][gene]:
+                    gene_dic[basic_gene][gene].append(item)
+                    if gene in recipe_data:
+                        recipe_data[gene] += 1
                     else:
-                        print("no dictionary in MLinfo  (PUBTATOR HAS FAILED US)")
-                        about = item.getAbout()
-                        if gene in about:
-                            print("THE GENE IS IN THE ABOUT THO SO PUBMED HAS NOT FAILED US")
-                            if item not in gene_dic[basic_gene][gene]:
-                                gene_dic[basic_gene][gene].append(item)
-                                if gene in recipe_data:
-                                    recipe_data[gene] += 1
-                                else:
-                                    recipe_data.update({gene: 1})
+                        recipe_data.update({gene: 1})"""
 
-    return gene_dic, recipe_data
+    return gene_dic, recipe_data, infodic
 
 
 def do_MATH_months(sourcedate, months):
@@ -185,7 +216,6 @@ def do_MATH_months(sourcedate, months):
 
 
 def make_wordcloud_dataframe(data):
-
     for item in Pubmed.pubmedEntry.instancesDict.values():
         starting_dic = item.getMlinfo()
         for id, dictionary in starting_dic.items():
@@ -198,9 +228,11 @@ def make_wordcloud_dataframe(data):
                     if list_for_dic not in data[id]:
                         data[id].append(list_for_dic)
     return data
+
+
 def make_csv_data(data):
     sentence = []
-    thing = ['','','','','']
+    thing = ['', '', '', '', '']
     for id, dic in data.items():
         thing = ['', '', '', '', '']
         thing[0] = id
@@ -224,15 +256,16 @@ def make_csv_data(data):
         sentence.append(thing)
     sentence = "\n".join(sentence)
     sentence = [sentence]
-        #thing.append(id)
-        #for type, list in dic.items():
-            #thing.append("/".join(list))
-        #" , ".join(thing)
-        #thing += "\n"
+    # thing.append(id)
+    # for type, list in dic.items():
+    # thing.append("/".join(list))
+    # " , ".join(thing)
+    # thing += "\n"
 
     print(sentence)
 
     return sentence
+
 
 @app.errorhandler(404)
 def page_not_found(e):

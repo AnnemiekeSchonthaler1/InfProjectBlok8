@@ -152,7 +152,7 @@ th {
         <div class="w3-third">
     <select class="w3-select w3-section w3-cell" name="publication_date">
       <option value="" disabled selected>Choose max publication date</option>
-      <option value="3">3 Months</option>
+      <option value="2">3 Months</option>
       <option value="6">6 Months</option>
       <option value="9">9 Months</option>
       <option value="12">1 Year</option>
@@ -203,7 +203,7 @@ th {
                   {% for gene_name, value in recipe_dict.items() %}
                 <tr>
                   <td>{{ gene_name }}</td>
-                  <td>{{ value }}</td>
+                  <td>{{ value[0] }}</td>
                 </tr>
                   {% endfor %}
               </table>
@@ -277,7 +277,7 @@ th {
               </thead>
                   {% for id, object  in entries.items() %}
                 <tr>
-                  <td>{{ id }}</td>
+                    <td><p class="w3-tooltip"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ id }}">{{ id }}<span class="w3-text">(<em>{{ object.getTitle() }}</em>)</span></a></p></td>
                   <td>{{ object.getScore() }}</td>
                   <td>{{ object.getDatePublication() }}</td>
                 {% if id in infodic.keys() %}
@@ -301,11 +301,6 @@ th {
                           {% else %}
                           <td> None </td>
                           {% endif %}
-                    {% else %}
-                        <td> None</td>
-                        <td> None</td>
-                        <td> None</td>
-                        <td> None</td>
                  {% endif %}
                 </tr>
                   {% endfor %}
@@ -383,7 +378,7 @@ var visitorsData = {
 		type: "doughnut",
 		dataPoints: [
 		    {% for key, value in recipe_dict.items()%}
-                { y: {{value}}, name: "{{key}}"} ,
+                { y: {{value[0]}}, name: "{{key}}"} ,
             {% endfor %}
 
 		]
