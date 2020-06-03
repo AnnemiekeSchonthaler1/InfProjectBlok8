@@ -288,107 +288,37 @@ def getPubmedArticlesByID(idList, searchTerm, genelist):
 
 
 def calculateScores(termsList, accessionDict, pubmedInstance):
-    # dit zijn alle termen die voorkomen in alle artikelen
-    print("alleTermen: ", alleTermen)
-    # dit zijn de termen die voorkomen in dit artikel
-    print("termslist: ", termsList)
-    # Dit zijn alle termen die voorkomen in het artikel met hun count ({accessie:[namen, count]})
-    print("accessionDict: ",accessionDict)
-    print("Matchende object:")
     voorkomensTermen = 0
     for item in alleTermen:
         if item in accessionDict.keys():
             aantalvoorkomensItem = accessionDict.get(item)[1]
             voorkomensTermen += aantalvoorkomensItem
-    print("voorkomensTermen: ", voorkomensTermen)
 
     alleTermenVoorkomens = 0
     for value in accessionDict.values():
         alleTermenVoorkomens += value[1]
 
-    for item in termsList:
-        print("item:", item)
 
-
-
-    #print(pubmedInstance)
+    # print(pubmedInstance)
     yearsAgo = datetime.today().year - pubmedInstance.getDatePublication().year
     today = datetime.today()
     then = pubmedInstance.getDatePublication()
     monthsAgo = (today.year - then.year) * 12 + (today.month - then.month)
-    print(monthsAgo)
 
-    print(mindate)
     mindateSplit = mindate.split("/")
-    maxdateFormatted = date(int(mindateSplit[0]), int(mindateSplit[1]), int(mindateSplit[2]))
-
+    maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
 
     maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
-    print(maxMonthsAgo)
-    
-    score = (((voorkomensTermen/alleTermenVoorkomens)+1) + ((len(termsList)/len(accessionDict.keys()))+1))/((monthsAgo/maxMonthsAgo+1)+1)
-    print("score: "+str(score))
-    # for key, value in pubmedEntry.instancesDict.items():
-    #     id = key
-    #     if value.getPubtatorStatus():
-    #         yearsAgo = datetime.today().year - value.getDatePublication().year
-    #         try:
-    #             # Ik kijk hoeveel van de gevonden genen in mijn lijst staan
-    #             alleGevondenGenen = list(value.getMlinfo()[id]["Gene"])
-    #             voorkomensGezochteGen = 0
-    #             for gene in geneList:
-    #                 if gene in alleGevondenGenen:
-    #                     voorkomensGezochteGen += alleGevondenGenen.count(gene)
-    #             alleTermen = len(alleGevondenGenen)
-    #         except KeyError:
-    #             voorkomensGezochteGen = 0
-    #             alleTermen = 0
-    #             alleGevondenGenen = []
-    #
-    #         searchWordsFound = []
-    #         voorkomensGezochteTerm = 0
-    #         alleZoekTermen = 0
-    #         # En ik kijk hoeveel van de gevonden zoektermen in mijn lijst staan
-    #         if list(value.getMlinfo()[id].keys()).count(["Chemical"]) > 0:
-    #             searchWordsFound += value.getMlinfo()[id]["Chemical"]
-    #         if list(value.getMlinfo()[id].keys()).count(["Disease"]) > 0:
-    #             searchWordsFound += value.getMlinfo()[id]["Disease"]
-    #         if list(value.getMlinfo()[id].keys()).count(["Mutation"]) > 0:
-    #             searchWordsFound += value.getMlinfo()[id]["Mutation"]
-    #         for word in searchList:
-    #             if word in searchWordsFound:
-    #                 voorkomensGezochteTerm += searchWordsFound.count(word)
-    #                 alleZoekTermen = len(searchWordsFound)
-    #
-    #         if not alleGevondenGenen == []:
-    #             aantalGenenGematcht = 0
-    #             for gene in geneList:
-    #                 if gene in alleGevondenGenen:
-    #                     aantalGenenGematcht += 1
-    #         else:
-    #             aantalGenenGematcht = 0
-    #
-    #         aantalTermenGematcht = 0
-    #         for term in searchList:
-    #             if term in searchWordsFound:
-    #                 aantalTermenGematcht += 1
-    #
-    #         try:
-    #             if organism in value.getMlinfo()[id]["Species"]:
-    #                 organismeValue = 2
-    #                 print("organismeleef")
-    #             else:
-    #                 organismeValue = 1
-    #         except KeyError:
-    #             organismeValue = 1
-    #
-    #         score = (voorkomensGezochteGen / (len(alleGevondenGenen) + 1) + (
-    #                 voorkomensGezochteTerm / (alleZoekTermen + 1))
-    #                  + (aantalGenenGematcht / (len(geneList) + 1)) + (aantalTermenGematcht / (len(searchList) + 1))) / (
-    #                         yearsAgo + 1)
-    #         value.setScore(score)
-    score = 0
+
+
+    try:
+        score = (((voorkomensTermen / alleTermenVoorkomens) + 1) + ((len(termsList) / (len(accessionDict.keys())+1)))) / (
+                (monthsAgo / maxMonthsAgo + 1) + 1)
+    except ZeroDivisionError:
+        score = 0
+    print("score: " + str(score))
     return score
+
 
 class geneEntry:
     __names = []
