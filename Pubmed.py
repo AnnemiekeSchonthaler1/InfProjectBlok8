@@ -14,6 +14,7 @@ maxdate = ""
 geneclassDict = {}
 alleTermen = []
 
+
 def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     print(searchList, geneList, email, searchDate, today, organism, maxArticles)
     # Zodat de dict bij elke run wordt geleegd
@@ -146,15 +147,16 @@ def getPubmedIDs(maxResults, searchTerm):
     return idlist
 
 
-def readGenePanels(filename):
+def readGenePanels(stringPanel):
     panels = {}
-    for regel in open(filename, "r").readlines():
+    for regel in stringPanel.split("\n"):
         gene = regel.split("\t")[0]
         panel = regel.split("\t")[1]
         if not gene in panels.keys():
             panels[gene] = [panel]
         else:
             print("Er mogen geen dubbele in zitten?????")
+    print(panels)
     return panels
 
 
@@ -227,12 +229,11 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations, geneList, s
 
                         # zodat er een score kan worden berekend
                         if not identifier in accessionDict.keys():
-                            accessionDict[identifier] = [[name],1]
+                            accessionDict[identifier] = [[name], 1]
                         else:
                             if not name in accessionDict[identifier][0]:
                                 accessionDict[identifier][0].append(name)
                             accessionDict[identifier][1] += 1
-
 
                         # Ik stop het in de twee dicts
                         if not type in annotations[pubmedid].keys():
@@ -298,22 +299,21 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
     for value in accessionDict.values():
         alleTermenVoorkomens += value[1]
 
-
-    # print(pubmedInstance)
-    yearsAgo = datetime.today().year - pubmedInstance.getDatePublication().year
     today = datetime.today()
     then = pubmedInstance.getDatePublication()
     monthsAgo = (today.year - then.year) * 12 + (today.month - then.month)
 
     mindateSplit = mindate.split("/")
     maxdateFormatted = date(int(mindateSplit[0]), int(mindateSplit[1]), int(mindateSplit[2]))
+    # maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
 
     maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
-
+    print(maxMonthsAgo)
 
     try:
-        score = (((voorkomensTermen / alleTermenVoorkomens) + 1) + ((len(termsList) / (len(accessionDict.keys())+1)))) / (
-                (monthsAgo / maxMonthsAgo + 1) + 1)
+        score = (((voorkomensTermen / alleTermenVoorkomens) + 1) + (
+        (len(termsList) / (len(accessionDict.keys()) + 1)))) / (
+                        (monthsAgo / maxMonthsAgo + 1) + 1)
     except ZeroDivisionError:
         score = 0
     print("score: " + str(score))
@@ -405,3 +405,5 @@ class pubmedEntry:
     def getScore(self):
         return self.__score
 
+
+#main(["Homo sapiens"], ["ABCD1"], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 5000)
