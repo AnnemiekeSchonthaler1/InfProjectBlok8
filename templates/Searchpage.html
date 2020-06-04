@@ -199,11 +199,13 @@ th {
                 <tr>
                   <th>Gene</th>
                   <th>Amount of Articles</th>
+                  <th>Gene panel</th>
                 </tr>
                   {% for gene_name, value in recipe_dict.items() %}
                 <tr>
                   <td>{{ gene_name }}</td>
                   <td>{{ value[0] }}</td>
+                  <td>{{ value[1] }}</td>
                 </tr>
                   {% endfor %}
               </table>

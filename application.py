@@ -39,7 +39,7 @@ def results():
     pubmed_entries = {}
     recipe_data = {}
     data = {}
-    gene_panel = None
+    gene_panel = ""
     amount_of_articles = None
     today = datetime.date.today()
     csv_data = ""
@@ -55,6 +55,8 @@ def results():
                 print(search_date)
             elif key == "gene_panel":
                 gene_panel = value
+                if gene_panel:
+                    gene_panel = Pubmed.readGenePanels(gene_panel)
 
             elif key == "disease_characteristic":
                 disease_char = value
@@ -99,9 +101,8 @@ def results():
             Synonymdict = gene_list
         # make a dictionary to save the counts and the articles per gene
         print("hmmm we gaan nu ff door met een counter en het genedic in elkaar zetten")
-        gene_dic, recipe_data, infodic = make_genedic_and_count(Synonymdict,infodic)
-
-        # make the graph of amount of results per gene found mmmmmm donut
+        gene_dic = make_genedic(Synonymdict)
+        gene_dic, recipe_data, infodic = fill_genedic(gene_dic, infodic, gene_panel)
 
         print("were making graphs now... this might take a while")
         data = {}
@@ -124,13 +125,15 @@ def results():
 
 
 def most_frequent(List):
-    occurence_count = Counter(List)
-    return occurence_count.most_common(1)[0][0]
+    """for value in List:
+        if " " in value or "-" in value or "=" in value:
+            List.remove(value)"""
+    if List:
+        occurence_count = Counter(List)
+        return occurence_count.most_common(1)[0][0]
 
 
-def make_genedic_and_count(Synonymdict, infodic):
-    # {gene : count}
-    recipe_data = {}
+def make_genedic(Synonymdict):
     # {gene : {gene: [article_entery,...], synonym_of_Gene : [article entery]} gene : {gene: []}
     annotation_dic = Pubmed.pubmedEntry.allAnnotations
     print("im generating the empty gene_dic")
@@ -147,7 +150,31 @@ def make_genedic_and_count(Synonymdict, infodic):
                     if s != '':
                         gene_dic[gene][s] = []
     print("empty genedic", gene_dic)
-    print("im starting with filling the gene_dic")
+    return gene_dic
+
+
+def check_genepanel(gene, genepanel):
+    if gene in genepanel.keys():
+        return genepanel[gene]
+
+
+def add_to_recipe(item, gene, recipe_data, gene_panel):
+    if gene in recipe_data:
+        recipe_data[gene][0] += 1
+    else:
+        recipe_data.update({gene: [1, []]})
+        if gene_panel:
+            panel = check_genepanel(gene, gene_panel)
+            recipe_data[gene][1] = panel
+            if panel is not None:
+                score = item.getScore()
+                item.setScore(score + 0.5)
+
+
+def fill_genedic(gene_dic, infodic, gene_panel):
+    # {gene : count}
+
+    recipe_data = {}
     for item in Pubmed.pubmedEntry.instancesDict.values():
         MLinfo = item.getMlinfo()
         if MLinfo:
@@ -158,52 +185,42 @@ def make_genedic_and_count(Synonymdict, infodic):
                             if gene in dictionary['Gene']:
                                 if item not in gene_dic[basic_gene][gene]:
                                     gene_dic[basic_gene][gene].append(item)
-                                    if gene in recipe_data:
-                                        recipe_data[gene][0] += 1
-                                    else:
-                                        recipe_data.update({gene: [1, []]})
+                                    add_to_recipe(item, gene, recipe_data, gene_panel)
+
 
         else:
-            item.setScore(-1)
-            gene_found = []
-            annotations = {}
-            print("no dictionary in MLinfo  (PUBTATOR HAS FAILED US)")
-            about = item.getAbout()
-            id = item.pubmedID
-            x = re.findall('[A-Z0-9]*', about)
-            for value in x:
-                if len(value) > 1 and x.count(
-                        value) > 1 and value != "DNA" and value != "RNA" and value.isdigit() is False and value not in gene_found:
-                    if "({})".format(value) not in about and "({}s)".format(value) not in about:
-                        gene_found.append(value)
-                        annotations.update({id: {"Gene": gene_found}})
-                        item.setMLinfo(annotations)
-                        infodic.update({id: {"Gene": gene_found}})
-                        #print(item.getMlinfo())
-                        for gene_name in gene_found:
-                            if gene_name in recipe_data:
-                                recipe_data[gene_name][0] += 1
-                            else:
-                                recipe_data.update({gene_name: [1, []]})
-                            if gene_name not in gene_dic.keys():
-                                print(gene_name)
-                                gene_dic.update({gene_name: {gene_name: [item]}})
-                            else:
-                                print("already in there")
-                                if item not in gene_dic[gene_name][gene_name]:
-                                    gene_dic[gene_name][gene_name].append(item)
-                                    print(gene_dic)
-            # print(gene_found)
-            """if gene in about:
-                print("THE GENE IS IN THE ABOUT THO SO PUBMED HAS NOT FAILED US")
-                if item not in gene_dic[basic_gene][gene]:
-                    gene_dic[basic_gene][gene].append(item)
-                    if gene in recipe_data:
-                        recipe_data[gene] += 1
-                    else:
-                        recipe_data.update({gene: 1})"""
-
+            gene_found = search_for_genes_regex(item, gene_dic, recipe_data, infodic)
+            for gene_name in gene_found:
+                add_to_recipe(item, gene_name, recipe_data, gene_panel)
+                if gene_name not in gene_dic.keys():
+                    gene_dic.update({gene_name: {gene_name: [item]}})
+                else:
+                    if item not in gene_dic[gene_name][gene_name]:
+                        gene_dic[gene_name][gene_name].append(item)
     return gene_dic, recipe_data, infodic
+
+
+def search_for_genes_regex(item, gene_dic, recipe_data, infodic):
+    item.setScore(-1)
+    gene_found = []
+    annotations = {}
+    print("no dictionary in MLinfo  (PUBTATOR HAS FAILED US)")
+    about = item.getAbout()
+    id = item.pubmedID
+    x = re.findall('[A-Z0-9]*', about)
+    for value in x:
+        if len(value) > 1 and x.count(
+                value) > 1 and \
+                value != "DNA" and value != "RNA" and \
+                value.isdigit() is False \
+                and value not in gene_found:
+
+            if "({})".format(value) not in about and "({}s)".format(value) not in about:
+                gene_found.append(value)
+                annotations.update({id: {"Gene": gene_found}})
+                item.setMLinfo(annotations)
+                infodic.update({id: {"Gene": gene_found}})
+    return gene_found
 
 
 def do_MATH_months(sourcedate, months):
