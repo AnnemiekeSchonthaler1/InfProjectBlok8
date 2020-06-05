@@ -1,4 +1,4 @@
-from Bio import Entrez, Medline
+from bio import Entrez, Medline
 import time
 import mysql.connector
 from mysql.connector import Error
@@ -308,7 +308,6 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
     # maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
 
     maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
-    print(maxMonthsAgo)
 
     try:
         score = (((voorkomensTermen / alleTermenVoorkomens) + 1) + (
@@ -316,7 +315,6 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
                         (monthsAgo / maxMonthsAgo + 1) + 1)
     except ZeroDivisionError:
         score = 0
-    print("score: " + str(score))
     return score
 
 

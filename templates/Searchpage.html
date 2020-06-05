@@ -223,8 +223,13 @@ th {
 
          <div class = "w3-cell-row w3-container w3-white, w3-margin" style="width: 100%">
             <div class="w3-cell" style="width: 90%">
+            {% if name in gene_panel.keys() %}
              <button onclick="myopen('{{name }}')" class="w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
+                {% else %}
+                <button onclick="myopen('{{name }}')" class="w3-button w3-block w3-hover-black  bluey w3-round-xlarge w3-left-align">
+                 {{ name }}  <i class='fas fa-angle-down'></i> </button>
+            {% endif %}
             <div id='{{name }}' class="w3-container w3-hide  w3-animate-opacity">
         {%for omim_name, omim_id in genedic["omim_id"].items() %}
         {%if name == omim_name %}

@@ -1,3 +1,4 @@
+pandas
 biopython==1.76
 click==7.1.1
 Flask==1.1.2

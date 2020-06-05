@@ -121,7 +121,8 @@ def results():
         csv_data = make_csv_data(infodic)
         print(infodic)
     return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic,
-                           recipe_dict=recipe_data, entries=pubmed_entries, data=data, csv_data=csv_data)
+                           recipe_dict=recipe_data, entries=pubmed_entries, data=data, csv_data=csv_data,
+                           gene_panel=gene_panel)
 
 
 def most_frequent(List):
