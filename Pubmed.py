@@ -6,6 +6,9 @@ import pubtator
 import json
 from datetime import datetime
 from datetime import date
+import datetime as datetimewhole
+from time import strptime
+#import datetime
 
 # I make the dates global
 mindate = ""
@@ -17,6 +20,12 @@ alleTermen = []
 
 def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     print(searchList, geneList, email, searchDate, today, organism, maxArticles)
+    global mindate
+    global maxdate
+    # zodat mindate altijd een waarde heeft
+    if mindate == "":
+        mindate = "01/01/1500"
+
     # Zodat de dict bij elke run wordt geleegd
     global geneclassDict
     global alleTermen
@@ -30,8 +39,6 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     pubmedEntry.allAnnotations = {}
 
     # I set the dates to the entered values
-    global mindate
-    global maxdate
     mindate = str(searchDate).replace("-", "/")
     maxdate = str(today).replace("-", "/")
 
@@ -100,6 +107,7 @@ def findSynonyms(geneList, dictSynonyms):
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
+
             cursor.execute("select symbool, vorig_symbool "
                            "from huidig_symbool join vorig_symbool on (symbool=huidig_symbool_symbool);")
             records = cursor.fetchall()
@@ -205,6 +213,9 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations, geneList, s
                 allAnnotations[pubmedid] = {}
                 datePublished = y["created"]["$date"]
                 datePublished = datetime.fromtimestamp(datePublished / 1000.0)
+                datePublished = str(datePublished)
+                datePublished = datePublished.split("-")
+                datePublished = datePublished[0]+"/"+datePublished[1]+"/"+datePublished[2].split(" ")[0]
                 author = y["authors"]
                 pubmedEntryInstance = pubmedEntry(pubmedid, searchTerm, author)
                 pubmedEntryInstance.setDatePublication(datePublished)
@@ -271,7 +282,24 @@ def getPubmedArticlesByID(idList, searchTerm, genelist):
     records = list(records)
     for record in records:
         pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"))
-        pubmedEntryInstance.setDatePublication(record.get("DP"))
+        # om de datum om te zetten naar een werkbaar format
+        date = record.get("DP")
+        if date is not None:
+            date = str(date).split(" ")
+            if len(date) == 1:
+                date.append("Jan")
+                date.append("01")
+            elif len(date) == 2:
+                date.append("01")
+            # Het date format van Entrez is niet optimaal..
+            datemonth = date[1].split("-")[0]
+            datemonth = datemonth.split("/")[0]
+            # Zodat ik het maandnummer heb ipv de maandnaam
+            datetime_object = datetimewhole.datetime.strptime(datemonth, "%b")
+            month_number = datetime_object.month
+            date = date[0]+"/"+str(month_number)+"/"+date[2]
+
+        pubmedEntryInstance.setDatePublication(date)
         pubmedEntryInstance.setAbout(record.get("AB"))
         pubmedEntryInstance.setTitle(record.get("TI"))
         if not record.get("AB") is None:
@@ -301,11 +329,12 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
 
     today = datetime.today()
     then = pubmedInstance.getDatePublication()
-    monthsAgo = (today.year - then.year) * 12 + (today.month - then.month)
+    then = then.split("/")
+    monthsAgo = (today.year - int(then[0])) * 12 + (today.month - int(then[1]))
 
     mindateSplit = mindate.split("/")
-    maxdateFormatted = date(int(mindateSplit[0]), int(mindateSplit[1]), int(mindateSplit[2]))
-    # maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
+    # maxdateFormatted = date(int(mindateSplit[0]), int(mindateSplit[1]), int(mindateSplit[2]))
+    maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
 
     maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
 
@@ -315,6 +344,7 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
                         (monthsAgo / maxMonthsAgo + 1) + 1)
     except ZeroDivisionError:
         score = 0
+    print("score: " + str(score))
     return score
 
 
@@ -404,4 +434,4 @@ class pubmedEntry:
         return self.__score
 
 
-#main(["Homo sapiens"], ["ABCD1"], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 5000)
+#main(["Homo sapiens"], [], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 5000)
