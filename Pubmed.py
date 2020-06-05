@@ -1,4 +1,4 @@
-from bio import Entrez, Medline
+from Bio import Entrez, Medline
 import time
 import mysql.connector
 from mysql.connector import Error
