@@ -1,4 +1,4 @@
-from Bio import Entrez, Medline"""
+"""
 Dit sr
 """
 
