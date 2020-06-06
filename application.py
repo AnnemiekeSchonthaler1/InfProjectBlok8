@@ -55,9 +55,11 @@ def results():
                 print(search_date)
             elif key == "gene_panel":
                 gene_panel = value
+                print("genepanel", gene_panel)
                 if gene_panel:
                     gene_panel = Pubmed.readGenePanels(gene_panel)
-
+                else:
+                    gene_panel = {}
             elif key == "disease_characteristic":
                 disease_char = value
                 search_list = disease_char.split(",")
