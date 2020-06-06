@@ -323,7 +323,7 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
 
     mindateSplit = mindate.split("/")
     maxdateFormatted = date(int(mindateSplit[0]), int(mindateSplit[1]), int(mindateSplit[2]))
-    # maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
+    #### maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
 
     maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
 
