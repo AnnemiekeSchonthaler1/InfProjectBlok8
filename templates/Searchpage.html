@@ -214,8 +214,9 @@ th {
       <div class="w3-panel pinky w3-round-xlarge" style="width: 300px"> <h2 class="w3-wide">Results <img src="../static/Spooder.png" style="width:100px;height: 50px" alt="icon"></h2></div>
   </div>
     <div class=" w3-container w3-cell-row w3-section w3-white" style="height: 300px;width: 100%">
-        {% if plot != None and recipe_dict != None%}
+        {% if recipe_dict != None%}
         <div class="w3-container w3-cell w3-margin" style="width: 100%; height: 380px" >
+
             <div id="chartContainer" style="height: 370px; max-width: 920px; margin: 5px auto;"></div>
             <button class="w3-btn w3-wide w3-round-xlarge pinky w3-text-white invisible" id="backButton">< Back</button>
             <script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
@@ -245,6 +246,7 @@ th {
     <div class="w3-bar w3-theme-l3">
   <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink pinky" onclick="openCity(event,'Visual')">Visualised data</button>
   <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink " onclick="openCity(event,'Table')">Table of results</button>
+  <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink " onclick="openCity(event,'Table_none')">Table of results without annotation</button>
     </div>
     <div id="Visual" class="w3-container city">
     <div id="myBtnContainer" style="width: 100%">
@@ -324,9 +326,9 @@ th {
                   {% for id, object  in entries.items() %}
                 <tr>
                     <td><p class="w3-tooltip"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ id }}">{{ id }}<span class="w3-text">(<em>{{ object.getTitle() }}</em>)</span></a></p></td>
+                {% if id in infodic.keys() and object.getScore != None%}
                   <td>{{ object.getScore() }}</td>
                   <td>{{ object.getDatePublication() }}</td>
-                {% if id in infodic.keys() %}
                       {% if "Gene" in infodic[id].keys() %}
                       <td>{{ infodic[id]["Gene"] }}</td>
                           {% else %}
@@ -347,6 +349,29 @@ th {
                           {% else %}
                           <td> None </td>
                           {% endif %}
+                 {% endif %}
+                </tr>
+                  {% endfor %}
+
+              </table>
+        </div>
+    </div>
+    <div id="Table_none" class="w3-container city" style="display:none">
+        <div class="w3-responsive">
+              <table id="table" style="width: 100%;" class="sortable w3-table-all w3-text-black w3-margin w3-hoverable">
+              <thead>
+                <tr>
+                  <th>Article title</th>
+                  <th>Score</th>
+                  <th>Publication date</th>
+                </tr>
+              </thead>
+                  {% for id, object  in entries.items() %}
+                <tr>
+                    <td><p class="w3-tooltip"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ id }}">{{ object.getTitle() }}</a></p></td>
+                {% if id not in infodic.keys() and object.getScore != None%}
+                  <td>{{ object.getScore() }}</td>
+                  <td>{{ object.getDatePublication() }}</td>
                  {% endif %}
                 </tr>
                   {% endfor %}
