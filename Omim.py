@@ -1,5 +1,5 @@
 import mysql
-from bio import Entrez, Medline
+from Bio import Entrez, Medline
 from mysql.connector import Error
 
 
