@@ -80,6 +80,33 @@ th {
   z-index: 2;
   top: 0;
 }
+    .container {
+  overflow: hidden;
+}
+
+.filterDiv {
+  display: none; /* Hidden by default */
+}
+
+/* The "show" class is added to the filtered elements */
+.show {
+  display: block;
+}
+
+/* Style the buttons */
+.btn {
+}
+
+/* Add a light grey background on mouse-over */
+.btn:hover {
+
+}
+
+/* Add a dark background to the active button */
+.w3-btn.active {
+ background-color: #666;
+  color: white;
+}
 </style>
 <body class="w3-theme-l2">
 
@@ -124,7 +151,7 @@ th {
   <div class="w3-container w3-theme-l3 w3-padding">
       <div class="w3-panel bluey w3-round-xlarge" style="width: 200px;"><h2 class="w3-wide" style="font-size: 30px;">Search</h2></div>
   </div>
-  <form class="w3-container " method="post" action="https://hannl-hlo-bi2a1-app.azurewebsites.net/result">
+  <form class="w3-container " method="post" action="http://127.0.0.1:5000/result">
     <p>
     <label class="w3-text-black"><b>disease-characteristics</b></label>
     <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
@@ -181,6 +208,7 @@ th {
      <!--  end FORM -->
 
  <!-- start Results  link to pubmed article https://www.ncbi.nlm.nih.gov/pubmed/?term= item.pubmedId-->
+    {% if show_result %}
     <div class="w3-card-4 w3-white w3-section">
   <div class="w3-container w3-theme-l3">
       <div class="w3-panel pinky w3-round-xlarge" style="width: 300px"> <h2 class="w3-wide">Results <img src="../static/Spooder.png" style="width:100px;height: 50px" alt="icon"></h2></div>
@@ -195,7 +223,7 @@ th {
         </div>
         <div class=" w3-container " style="width: 100%; height: 380px">
             <div class="scrollable w3-margin" style="width: 100%">
-              <table class="sortable w3-table-all w3-text-black">
+              <table id="count_table" class="sortable w3-table-all w3-text-black">
                 <tr>
                   <th>Gene</th>
                   <th>Amount of Articles</th>
@@ -210,6 +238,7 @@ th {
                   {% endfor %}
               </table>
             </div>
+         <input type="text" class="w3-margin w3-border" style="width: 100%" id="myInput1" onkeyup="myFunction(0, 'count_table')" placeholder="Search for Gene.." title="Type in a Gene">
         </div>
         {% endif %}
     </div>
@@ -218,6 +247,11 @@ th {
   <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink " onclick="openCity(event,'Table')">Table of results</button>
     </div>
     <div id="Visual" class="w3-container city">
+    <div id="myBtnContainer" style="width: 100%">
+  <button class="w3-btn w3-border w3-margin active" style="width: 31%" onclick="filterSelection('all')"> Show all</button>
+  <button class="w3-btn w3-border w3-margin" style="width: 31%" onclick="filterSelection('yes_gene')"> in Gene panel</button>
+  <button class="w3-btn w3-border w3-margin" style="width: 31%" onclick="filterSelection('no_gene')"> not in Gene panel</button>
+    </div>
         {% if"articles" in genedic.keys() %}
      {% for name, gene in genedic["articles"].items()%}
 
@@ -225,10 +259,10 @@ th {
             <div class="w3-cell" style="width: 90%">
             {% if gene_panel %}
             {% if name in gene_panel.keys() %}
-             <button onclick="myopen('{{name }}')" class="w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
+             <button onclick="myopen('{{name }}')" class=" filterDiv no_gene w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
                 {% else %}
-                <button onclick="myopen('{{name }}')" class="w3-button w3-block w3-hover-black  bluey w3-round-xlarge w3-left-align">
+                <button onclick="myopen('{{name }}')" class=" filterDiv yes_gene w3-button w3-block w3-hover-black  bluey w3-round-xlarge w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
             {% endif %}
             {% else %}
@@ -258,7 +292,7 @@ th {
                     {% for item in list %}
                         <li>
                         <div class="w3-bar w3-light">
-                            <div class=" w3-button w3-left"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{item.getTitle()}}</a></div>
+                            <div class=" w3-button w3-left"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{item.getTitle()}}     <span class="w3-tag w3-margin-left w3-round-large bluey w3-center">{{ item.getScore() }}</span></a></div>
                         <div class="w3-button w3-right w3-border w3-opaque" onclick="document.getElementById({{ item.pubmedID }}).style.display='block'"> more info</div>
                         </div>
                         </li>
@@ -272,8 +306,8 @@ th {
     {% endif %}
     </div>
     <div id="Table" class="w3-container city" style="display:none">
-        <input type="text" class="w3-margin w3-border" style="width: 25%" id="myInput3" onkeyup="myFunction(3)" placeholder="Search for Gene.." title="Type in a Gene">
-        <input type="text" class="w3-margin w3-border" style="width: 25%" id="myInput4" onkeyup="myFunction(4)" placeholder="Search for Disease.." title="Type in a Disease">
+        <input type="text" class="w3-margin w3-border" style="width: 25%" id="myInput3" onkeyup="myFunction(3, 'table')" placeholder="Search for Gene.." title="Type in a Gene">
+        <input type="text" class="w3-margin w3-border" style="width: 25%" id="myInput4" onkeyup="myFunction(4, 'table')" placeholder="Search for Disease.." title="Type in a Disease">
         <div class="w3-responsive">
               <table id="table" style="width: 100%;" class="sortable w3-table-all w3-text-black w3-margin w3-hoverable">
               <thead>
@@ -359,6 +393,7 @@ th {
     </div>
   </div>
 {% endfor %}
+{% endif %}
 </div>
 <script>
 function myopen(id) {
@@ -386,11 +421,14 @@ var visitorsData = {
 		    horizontalAlign: "left", // left, center ,right
             verticalAlign: "center",  // top, center, bottom
         },
+        showInLegend: true,
 		startAngle: 90,
 		type: "doughnut",
 		dataPoints: [
 		    {% for key, value in recipe_dict.items()%}
+                {% if value[0] > 1 %}
                 { y: {{value[0]}}, name: "{{key}}"} ,
+                {% endif %}
             {% endfor %}
 
 		]
@@ -424,7 +462,7 @@ var newVSReturningVisitorsOptions = {
         verticalAlign: "center"
     },
 	title: {
-		text: "Amount of Articles per gene"
+		text: "Amount of Articles per gene bigger than 1"
 	},
 	subtitles: [{
 		text: "Click on Any Segment to see scores per article",
@@ -573,14 +611,16 @@ function openCity(evt, cityName) {
 }
 </script>
 <script>
-function myFunction(col_num) {
+function myFunction(col_num, table_id) {
   var input, filter, table, tr, td, i, txtValue;
+  if (col_num === 0){
+  input = document.getElementById("myInput1");}
   if (col_num === 3){
   input = document.getElementById("myInput3");}
   if (col_num === 4){
   input = document.getElementById("myInput4");}
   filter = input.value.toUpperCase();
-  table = document.getElementById("table");
+  table = document.getElementById(table_id);
   tr = table.getElementsByTagName("tr");
   for (i = 0; i < tr.length; i++) {
     td = tr[i].getElementsByTagName("td")[col_num];
@@ -593,6 +633,53 @@ function myFunction(col_num) {
       }
     }
   }
+}
+filterSelection("all");
+function filterSelection(c) {
+  var x, i;
+  x = document.getElementsByClassName("filterDiv");
+  if (c === "all") c = "";
+  // Add the "show" class (display:block) to the filtered elements, and remove the "show" class from the elements that are not selected
+  for (i = 0; i < x.length; i++) {
+    w3RemoveClass(x[i], "show");
+    if (x[i].className.indexOf(c) > -1) w3AddClass(x[i], "show");
+  }
+}
+
+// Show filtered elements
+function w3AddClass(element, name) {
+  var i, arr1, arr2;
+  arr1 = element.className.split(" ");
+  arr2 = name.split(" ");
+  for (i = 0; i < arr2.length; i++) {
+    if (arr1.indexOf(arr2[i]) === -1) {
+      element.className += " " + arr2[i];
+    }
+  }
+}
+
+// Hide elements that are not selected
+function w3RemoveClass(element, name) {
+  var i, arr1, arr2;
+  arr1 = element.className.split(" ");
+  arr2 = name.split(" ");
+  for (i = 0; i < arr2.length; i++) {
+    while (arr1.indexOf(arr2[i]) > -1) {
+      arr1.splice(arr1.indexOf(arr2[i]), 1);
+    }
+  }
+  element.className = arr1.join(" ");
+}
+
+// Add active class to the current control button (highlight it)
+var btnContainer = document.getElementById("myBtnContainer");
+var btns = btnContainer.getElementsByClassName("w3-btn");
+for (var i = 0; i < btns.length; i++) {
+  btns[i].addEventListener("click", function() {
+    var current = document.getElementsByClassName("active");
+    current[0].className = current[0].className.replace(" active", "");
+    this.className += " active";
+  });
 }
 </script>
 </body>

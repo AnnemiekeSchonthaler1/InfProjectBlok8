@@ -1,5 +1,5 @@
 import mysql
-from Bio import Entrez, Medline
+from bio import Entrez, Medline
 from mysql.connector import Error
 
 
@@ -8,9 +8,14 @@ def main(gene_list):
 
 
 def find_in_database(gene_list):
+    """
+    takes in a list of genes and checks if they are in the database, if they are the NCBI, uniprot and OMIM ids are
+    collected and put into a list connected to the gene
+    :param gene_list: list of genes
+    :return: dictionary met de ids gelinked aan de genes
+    """
     omim_id_dic = {}
     big_string = []
-    biggest_string = ""
     connection = ""
     cursor = ""
     for gene in gene_list:
@@ -43,7 +48,6 @@ def find_in_database(gene_list):
                     omim_id_dic[record[0]].append(omim)
                     omim_id_dic[record[0]].append(uni)
                     omim_id_dic[record[0]].append(ncbi)
-                    #print(omim_id_dic)
                 else:
                     id_found = textmine_in_OMIM(record[0])
                     omim_id_dic.update({record[0]: [id_found]})
@@ -59,6 +63,11 @@ def find_in_database(gene_list):
 
 
 def textmine_in_OMIM(term):
+    """
+    if the gene is not in the database there will be an attempt at finding it by textmining in OMIM
+    :param term:
+    :return:
+    """
     found_id = ""
     Entrez.email = 'A.N.Other@example.com'
     handle = Entrez.esearch(db="omim", term=term)

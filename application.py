@@ -2,7 +2,6 @@ import calendar
 import collections
 
 from flask import Flask, render_template, request
-import platform
 import datetime
 
 import Omim
@@ -15,119 +14,132 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST', 'GET'])
 def hello_world():
+    """
+    Hello world loads up the homepage of the application with no other functionalities
+    :return: home page html
+    """
     gene_dic = {}
-
-    print(platform.sys.version)
     return render_template("Mainpage.html", genedic=gene_dic)
 
 
 @app.route('/result', methods=['POST', 'GET'])
+
 def results():
-    print("hi i got to the result function")
+    """
+    The results function processes the user input and sends it off to the pubmed and pubtator search function
+    the data gathered from there is then edited into a useable format for the template and returns a searchpage with
+    the results shown once the search form is submitted
+    :return: search page html with or without results
+    """
+    show_result = False
     full_dicy = {}
-    pub_date = ""
-    disease_char = ""
-    gene_list = []  # miss anders opslaan ligt aan hoe we dit later gaan gebruiken
-    mail = ""
-    search_date = ""
-    wordcloud_cutoff = ""
-    organism = ""
-    plot_url = ""
-    search_list = []
-    URL_dic = {}
-    infodic = {}
+    annotation_entries = {}
     pubmed_entries = {}
-    recipe_data = {}
+    count_data = {}
     data = {}
     gene_panel = ""
-    amount_of_articles = None
     today = datetime.date.today()
     csv_data = ""
+
     if request.method == 'POST':
-        print("hi i got to the loop to digest data")
+        show_result = True
         result = request.form
-        for key, value in result.items():
-            if key == "publication_date":
-                pub_date = value
-                if pub_date == "2":
-                    pub_date = "3"
-                search_date = do_MATH_months(today, -int(pub_date))
-                print(search_date)
-            elif key == "gene_panel":
-                gene_panel = value
-                print("genepanel", gene_panel)
-                if gene_panel:
-                    gene_panel = Pubmed.readGenePanels(gene_panel)
-                else:
-                    gene_panel = {}
-            elif key == "disease_characteristic":
-                disease_char = value
-                search_list = disease_char.split(",")
-                print(search_list)
-            elif key == "organism":
-                organism = value
-            elif key == "amount_articles":
-                amount_of_articles = value
-            elif key == "mail":
-                mail = value
+        pub_date, disease_char, gene_list, mail, search_date, organism, search_list, gene_panel,amount_of_articles = getForm_data(result)
 
-            elif key == "gene_list":
-                values = value.split("\n")
-                for thing in values:
-                    thing = thing.strip("\r")
-                    thing = thing.strip(" ")
-                    if thing != " " and thing != "":
-                        gene_list.append(thing)
-
-        print("hi ik roep pubmed nu aan")
-        print(search_date)
+        print(pub_date, disease_char, gene_list, mail, search_date, organism, search_list,
+              amount_of_articles)
         Pubmed.main(searchList=search_list, geneList=gene_list, email=mail, searchDate=search_date, today=today,
                     organism=organism, maxArticles=amount_of_articles)
-        print("ik haal nu de annotaties op")
         pubmed_entries = Pubmed.pubmedEntry.instancesDict
-        infodic = Pubmed.pubmedEntry.allAnnotations
+        annotation_entries = Pubmed.pubmedEntry.allAnnotations
+        synonyms = Pubmed.pubmedEntry.dictSynonyms
+
         if len(gene_list) == 0:
-            print("ik ga nu een genlijst maken want die had je niet")
-            for id, dictionary in infodic.items():
+            for id, dictionary in annotation_entries.items():
                 if 'Gene' in dictionary.keys():
                     common = most_frequent(dictionary['Gene'])
                     if common not in gene_list:
                         gene_list.append(common)
 
-        print("hiii ga nu ff in database omim ids enzo zoeken")
         omim_ids = Omim.find_in_database(gene_list=gene_list)
-        # get a complete list of gene names
-        print("ik haal ook ff het synoniemen dictionary op")
-        Synonymdict = Pubmed.pubmedEntry.dictSynonyms
-        if len(Synonymdict) == 0:
-            Synonymdict = gene_list
-        # make a dictionary to save the counts and the articles per gene
-        print("hmmm we gaan nu ff door met een counter en het genedic in elkaar zetten")
-        gene_dic = make_genedic(Synonymdict)
-        gene_dic, recipe_data, infodic = fill_genedic(gene_dic, infodic, gene_panel)
 
-        print("were making graphs now... this might take a while")
+        if len(synonyms) == 0:
+            synonyms = gene_list
+
+        gene_dic = make_genedic(synonyms)
+        gene_dic, count_data, annotation_entries = fill_genedic(gene_dic, annotation_entries, gene_panel)
+
         data = {}
         data = make_wordcloud_dataframe(data)
-        print("ik ben klaar met wordclouds maken :(")
-        # dictionary with synonyms for the searchterm?
-        # make a complete dictionary with all information
-        print("ik maak nu een compleet dictionary met alle inforamatie enzo")
+
         full_dicy.update({"articles": gene_dic})
         full_dicy.update({"omim_id": omim_ids})
-        full_dicy.update({"amount_found": recipe_data})
-        print("volledig dicy ", full_dicy)
-        # Embed the result in the html output.
-        print("genereer pagina nu maar... hopelijk")
-        print(data)
-        csv_data = make_csv_data(infodic)
-        print(infodic)
-    return render_template("Searchpage.html", genedic=full_dicy, plot=plot_url, infodic=infodic, url_dic=URL_dic,
-                           recipe_dict=recipe_data, entries=pubmed_entries, data=data, csv_data=csv_data,
-                           gene_panel=gene_panel)
+        full_dicy.update({"amount_found": count_data})
+
+        csv_data = make_csv_data(annotation_entries)
+
+    return render_template("Searchpage.html", genedic=full_dicy, infodic=annotation_entries,
+                           recipe_dict=count_data, entries=pubmed_entries, data=data, csv_data=csv_data,
+                           gene_panel=gene_panel,  show_result=show_result)
+
+
+def getForm_data(result):
+    """
+    getForm_data takes in the result dictionary of the form and then writes the values off to variables and returns them
+    :param result: dictionary with form data
+    :return: pub_date, disease_char, gene_list, mail, search_date, organism, search_list, gene_panel, amount_of_articles
+    """
+    pub_date = "1000"
+    disease_char = ""
+    gene_list = []
+    mail = ""
+    search_date = ""
+    organism = ""
+    search_list = []
+    gene_panel = ""
+    amount_of_articles = None
+    today = datetime.date.today()
+    for key, value in result.items():
+        if key == "publication_date":
+            pub_date = value
+            if pub_date == "2":
+                pub_date = "3"
+            search_date = do_MATH_months(today, -int(pub_date))
+        elif key == "gene_panel":
+            gene_panel = value
+            if gene_panel:
+                gene_panel = Pubmed.readGenePanels(gene_panel)
+            else:
+                gene_panel = {}
+        elif key == "disease_characteristic":
+            disease_char = value
+            search_list = disease_char.split(",")
+        elif key == "organism":
+            organism = value
+        elif key == "amount_articles":
+            amount_of_articles = value
+        elif key == "mail":
+            mail = value
+
+        elif key == "gene_list":
+            values = value.split("\n")
+            for thing in values:
+                thing = thing.strip("\r")
+                thing = thing.strip(" ")
+                if thing != " " and thing != "":
+                    gene_list.append(thing)
+    if "publication_date" not in result.keys():
+        search_date = do_MATH_months(today, -int(pub_date))
+    return pub_date, disease_char, gene_list, mail, search_date, organism, search_list, gene_panel, amount_of_articles
 
 
 def most_frequent(List):
+    """
+    most_frequent takes in a list with all genes found in an article
+    and then returns the most frequent gene in that list
+    :param List: list with all genes of an article
+    :return: the most common gene in the list
+    """
     """for value in List:
         if " " in value or "-" in value or "=" in value:
             List.remove(value)"""
@@ -137,12 +149,13 @@ def most_frequent(List):
 
 
 def make_genedic(Synonymdict):
-    # {gene : {gene: [article_entery,...], synonym_of_Gene : [article entery]} gene : {gene: []}
-    annotation_dic = Pubmed.pubmedEntry.allAnnotations
-    print("im generating the empty gene_dic")
+    """
+    make_genedic makes a dictionary with all genes and synonyms with as value an empty list later to be filled
+    :param Synonymdict: dictionary with gene as key and a list with synonyms as value
+    :return: gene dic {key = genename : value = {key = genename or synonym, value = list [] }}
+    """
     gene_dic = {}
     if type(Synonymdict) is list:
-        print("its a list")
         for gene in Synonymdict:
             gene_dic.update({gene: {gene: []}})
     else:
@@ -152,32 +165,57 @@ def make_genedic(Synonymdict):
                 for s in synonyms:
                     if s != '':
                         gene_dic[gene][s] = []
-    print("empty genedic", gene_dic)
+
     return gene_dic
 
 
 def check_genepanel(gene, genepanel):
+    """
+    check genepanel checks if a gene is in the genepanel and returns what gene panel it is in if it is
+    :param gene: gene name, like 'CHD8'
+    :param genepanel: gene panel dictionary {key = gene_name , value = [panels containing gene]}
+    :return: panels the searched gene is in
+    """
     if gene in genepanel.keys():
         return genepanel[gene]
 
 
-def add_to_recipe(item, gene, recipe_data, gene_panel):
-    if gene in recipe_data:
-        recipe_data[gene][0] += 1
+def add_to_count(item, gene, count_data, gene_panel):
+    """
+    add to count, counts the amount of articles there are per gene and checks if they are in a gene panel.
+    this data is then added to a list with the count and panels of a gene. When a gene is not in a gene panel
+    the score gets raised by 0.5
+    :param item: pubmed entry object
+    :param gene: gene name
+    :param count_data: dictionary with gene, count and panels {key = gene, value = [count, [panels]]}
+    :param gene_panel: dictionary of gene panel {key = gene, value = [panels]}
+    :return: updated count_data
+    """
+    if gene in count_data:
+        count_data[gene][0] += 1
     else:
-        recipe_data.update({gene: [1, []]})
+        count_data.update({gene: [1, []]})
         if gene_panel:
             panel = check_genepanel(gene, gene_panel)
-            recipe_data[gene][1] = panel
+            count_data[gene][1] = panel
             if panel is not None:
                 score = item.getScore()
                 item.setScore(score + 0.5)
 
 
 def fill_genedic(gene_dic, infodic, gene_panel):
-    # {gene : count}
-
-    recipe_data = {}
+    """
+    fill genedic fills up de empty lists in the dictionary values with pubmed entries(articles) by looking through
+    the annotation provided by pubtator. if there is no annotation then a regex will be used to determine genes in the
+    abstract of the article. these are all added to the list related to the genes found in the article.
+    :param gene_dic: dictionary with genes and their synonyms and the articles that contain them
+    {key = gene, value = {key = gene or synonym, value = [pubmed_entry(articles)]}}
+    :param infodic: dictonary with all annotations of every article,
+    {key = pubmed_id, value = {key = type_of_annotation, value = [annotation]}}
+    :param gene_panel: dictionary of gene panel {key = gene, value = [panels]}
+    :return: filled gene dic, the counts of articles per gene and their panels, updated annotations(added to by regex)
+    """
+    count_data = {}
     for item in Pubmed.pubmedEntry.instancesDict.values():
         MLinfo = item.getMlinfo()
         if MLinfo:
@@ -188,46 +226,58 @@ def fill_genedic(gene_dic, infodic, gene_panel):
                             if gene in dictionary['Gene']:
                                 if item not in gene_dic[basic_gene][gene]:
                                     gene_dic[basic_gene][gene].append(item)
-                                    add_to_recipe(item, gene, recipe_data, gene_panel)
-
+                                    add_to_count(item, gene, count_data, gene_panel)
 
         else:
-            gene_found = search_for_genes_regex(item, gene_dic, recipe_data, infodic)
+            gene_found = search_for_genes_regex(item, infodic)
             for gene_name in gene_found:
-                add_to_recipe(item, gene_name, recipe_data, gene_panel)
+                add_to_count(item, gene_name, count_data, gene_panel)
                 if gene_name not in gene_dic.keys():
                     gene_dic.update({gene_name: {gene_name: [item]}})
                 else:
                     if item not in gene_dic[gene_name][gene_name]:
                         gene_dic[gene_name][gene_name].append(item)
-    return gene_dic, recipe_data, infodic
+    return gene_dic, count_data, infodic
 
 
-def search_for_genes_regex(item, gene_dic, recipe_data, infodic):
+def search_for_genes_regex(item, infodic):
+    """
+    this function searches for genes with regex and sets the score of the article to -1. the found data is added to
+    the annotations dictionary and the personal annotation dictionary of the object
+    :param item: pubmed entry
+    :param infodic: dictionary of all annotations of all pubmed entries
+    {key = pubmed_id, value = {key = type, value = [annotation]}}
+    :return: list of genes found with the regex
+    """
     item.setScore(-1)
     gene_found = []
     annotations = {}
-    print("no dictionary in MLinfo  (PUBTATOR HAS FAILED US)")
+
     about = item.getAbout()
-    id = item.pubmedID
+    id_entry = item.pubmedID
     x = re.findall('[A-Z0-9]*', about)
     for value in x:
-        if len(value) > 1 and x.count(
+        if len(value) > 2 and x.count(
                 value) > 1 and \
-                value != "DNA" and value != "RNA" and \
+                value not in ["RNA", "DNA", "BMI", "MIM", "MRI", "ICU"] and \
                 value.isdigit() is False \
                 and value not in gene_found:
 
             if "({})".format(value) not in about and "({}s)".format(value) not in about:
                 gene_found.append(value)
-                annotations.update({id: {"Gene": gene_found}})
+                annotations.update({id_entry: {"Gene": gene_found}})
                 item.setMLinfo(annotations)
-                infodic.update({id: {"Gene": gene_found}})
+                infodic.update({id_entry: {"Gene": gene_found}})
     return gene_found
 
 
 def do_MATH_months(sourcedate, months):
-    print("ik bereken ff wat voor tijd het dan moet zijn voor de zoek opdracht")
+    """
+    this function calculates the date after subtracting or adding a given amount of months to the current date
+    :param sourcedate: date of today
+    :param months: amount of months to add or subtract (input a negative number to subtract)
+    :return: the date with the amount added or subtracted
+    """
     month = sourcedate.month - 1 + months
     year = sourcedate.year + month // 12
     month = month % 12 + 1
@@ -236,26 +286,38 @@ def do_MATH_months(sourcedate, months):
 
 
 def make_wordcloud_dataframe(data):
+    """
+    makes a dataframe for the wordcloud of each entry by counting the frequency of every word in the annotation
+    :param data: empty dictionary
+    :return: filled data, {key = pubmed_id, value = [word, frequency, type of annotation]}
+    """
     for item in Pubmed.pubmedEntry.instancesDict.values():
         starting_dic = item.getMlinfo()
-        for id, dictionary in starting_dic.items():
-            data.update({id: []})
-            for type, listy in dictionary.items():
+        for id_entry, dictionary in starting_dic.items():
+            data.update({id_entry: []})
+            for type_annotation, listy in dictionary.items():
                 frequency = collections.Counter(listy)
                 for word in listy:
                     frequency_word = frequency[word]
-                    list_for_dic = [word, frequency_word, type]
-                    if list_for_dic not in data[id]:
-                        data[id].append(list_for_dic)
+                    list_for_dic = [word, frequency_word, type_annotation]
+                    if list_for_dic not in data[id_entry]:
+                        data[id_entry].append(list_for_dic)
     return data
 
 
 def make_csv_data(data):
+    """
+    makes data that can be downloaded from the website in the form of a txt file that can be used in Excel
+    :param data: annotation of all entries
+    :return: big string of all the annotations seperated the columns with ,
+                                                     and the words with /
+                                                    every line ends with \n
+    """
     sentence = []
     thing = ['', '', '', '', '']
-    for id, dic in data.items():
+    for id_entry, dic in data.items():
         thing = ['', '', '', '', '']
-        thing[0] = id
+        thing[0] = id_entry
         if 'Gene' in dic.keys():
             thing[1] = "/".join(dic['Gene'])
         else:
@@ -276,29 +338,37 @@ def make_csv_data(data):
         sentence.append(thing)
     sentence = "\n".join(sentence)
     sentence = [sentence]
-    # thing.append(id)
-    # for type, list in dic.items():
-    # thing.append("/".join(list))
-    # " , ".join(thing)
-    # thing += "\n"
-
-    print(sentence)
 
     return sentence
 
 
 @app.errorhandler(404)
 def page_not_found(e):
+    """
+    error handler for page not found
+    :param e: error 404
+    :return: template for 404 error
+    """
     return render_template('404.html'), 404
 
 
 @app.errorhandler(410)
 def page_gone(e):
+    """
+        error handler for page gone
+        :param e: error 410
+        :return: template for 410 error
+        """
     return render_template('410.html'), 410
 
 
 @app.errorhandler(500)
 def internal_error(e):
+    """
+        error handler for internal
+        :param e: error 500
+        :return: template for 500 error
+        """
     return render_template('500.html'), 500
 
 
