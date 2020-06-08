@@ -29,6 +29,16 @@ alleTermen = []
 
 
 def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
+    # searchList is de lijst met de ingevoerde synoniemen
+    # geneList is de lijst met de ingevoerde genen
+    # searchDate is de datum tot waar artikelen moeten worden gezocht
+    # today is de datum van vandaag
+    # organism is het ingevoerde organisme
+    # maxArticles is hoeveel artikelen ik maximaal op wil halen
+
+    # Ik meet hoe lang het duurt om dit script te runnen
+    start = time.time()
+
     global mindate
     global maxdate
     # Ik verander de globale waarde naar de ingevoerde waarde
@@ -38,20 +48,18 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     if mindate == "":
         mindate = "01/01/1500"
 
-    # Zodat de dict bij elke run wordt geleegd
+    # I set the email to the given email
+    Entrez.email = email
+
+    # Zodat alle waarden bij elke run worden geleegd
     global geneclassDict
     global alleTermen
     geneclassDict = {}
     alleTermen = []
-
-    searchList.append(organism)
-
-    print("Pubtator is zijn ding gaan doen")
-    start = time.time()
     pubmedEntry.allAnnotations = {}
 
-    # I set the email to the given email
-    Entrez.email = email
+    # Ik voeg het organisme toe aan de searchList
+    searchList.append(organism)
 
     # I add the genes to a dict to keep track of gene and synonym
     dictSynonyms = {}
@@ -60,6 +68,7 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
             dictSynonyms[gene] = []
     # I call a function to formulate a query
     # searchTerm contains this query
+    # geneList is the list with the synonyms added to it
     searchTerm, geneList = makeQuery(searchList, geneList, dictSynonyms)
 
     print("De query is ook geformuleerd")
@@ -67,51 +76,69 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     # I look for articles with the formulated query
     maxResults = getAmountOfResults(searchTerm)
     print("Ik heb gekeken hoeveel id's er kunnen worden opgehaald")
-    # Het maximale wat kan is 500.000
+    # Het maximale wat kan is 500.000, daarna komt er een MemoryError
     maxArticles = int(maxArticles)
     if int(maxResults) > maxArticles:
         print("Ik heb ingegrepen en dit aantal naar beneden gehaald")
         maxResults = maxArticles
-    # There is no need to look for results if there aren't any
     print("Het aantal mogelijke resultaten is " + str(maxResults))
+    # Ik controleer of er resultaten kunnen zijn met deze term
     if int(maxResults) != 0:
         print("En ik ben ermee aan de slag gegaan")
         idList = getPubmedIDs(maxResults, searchTerm)
-        print("Ik heb nu ook de id's opgehaald en ja dit printje is dubbel maar idc oke")
-        # idList = idList[0:500]
         ArticleInfoRetriever(idList, searchTerm, geneList, searchList)
+    else:
+        print("Er zijn geen resultaten met deze term")
     print("Dit duurt " + str(time.time() - start) + " secondes")
 
 
+"""Deze functie maakt van de lijsten met termen een zoekterm die in pubmed gezocht kan worden.
+Het gebruikt hiervoor de volgende variabelen:
+searchList = de lijst met de klinische termen
+geneList = de lijst met genen
+dictsynonym = Een dict die gebruikt word om de synoniemen van termen te houden. Deze wordt hier gevuld.
+dictsynonym ziet er uit als {gen:[synoniem]}
+"""
 def makeQuery(searchList, geneList, dictsynonym):
-    searchTerm = "({})"
+    searchTerm = "{}"
 
     for term in searchList:
         term = term + " OR {} "
         searchTerm = searchTerm.format(str(term))
     searchTerm = searchTerm.replace(" OR {}", "")
-    searchTerm += " AND ({})"
+    searchTerm += " AND {}"
 
-    geneList = findSynonyms(geneList, dictsynonym)
-    print(geneList)
+    # Ik roep een functie aan om synoniemen te zoeken
+    try:
+        geneList = findSynonyms(geneList, dictsynonym)
+    except:
+        print("Er is een error opgetreden in het vinden van de synoniemen")
     # This code formulates a query
     for gene in geneList:
         searchTerm = searchTerm.format(gene + " OR {}")
+    # Zodat er geen or en and in de query blijft staan
     searchTerm = searchTerm.replace("OR {}", "")
+    searchTerm = searchTerm.replace("OR", "")
     searchTerm = searchTerm.replace("AND {}", "")
     return searchTerm, geneList
 
 
-# Deze functie breidt de genlijst uit met de synoniemen.
+"""Deze functie zoekt synoniemen in de genlijst en voegt ze toe aan de genlijst en aan dictSynonyms, zodat
+ze mee kunnen worden genomen in de query.
+De functie wordt dan ook aangeroepen vanuit de functie om de query te maken, genaamd makeQuery
+De variabelen zijn:
+geneList = de lijst met genen
+dictSynonyms = een dict om de genen en synoniemen uit elkaar te houden
+"""
 def findSynonyms(geneList, dictSynonyms):
     records = ""
+    connection = mysql.connector.connect(
+        host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
+        db='owe7_pg1',
+        user='owe7_pg1@hannl-hlo-bioinformatica-mysqlsrv',
+        password="blaat1234")
+    cursor = connection.cursor()
     try:
-        connection = mysql.connector.connect(
-            host='hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com',
-            db='owe7_pg1',
-            user='owe7_pg1@hannl-hlo-bioinformatica-mysqlsrv',
-            password="blaat1234")
-        cursor = connection.cursor()
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
@@ -127,18 +154,23 @@ def findSynonyms(geneList, dictSynonyms):
             connection.close()
             print("MySQL connection is closed")
     synonyms = []
+    # Dit is absoluut niet de snelste manier maar om een of andere reden vind mysql de syntax niet leuk om op een gen te
+    # zoeken en dit duurt nu nog geen seconde en de database gaat niet groeien
     for record in records:
         if record[0] in geneList:
             if record[1] not in synonyms and not record[1] == "":
                 geneList.append(record[1])
                 dictSynonyms.get(str(record[0])).append(record[1])
             synonyms.append(record[1])
+    # Ik voeg dictSynonms toe aan een class zodat application.py er ook mee kan werken
     pubmedEntry.dictSynonyms = dictSynonyms
     return geneList
 
 
-# This method checks how many potential results there are with a query. This is needed to give a maximum of results
-# to pubmed, to fetch.
+"""Deze functie kijkt hoeveel resultaten er maximaal op kunnen worden gehaald met de zoekterm zodat dit
+in andere functies als retmax kan worden gegeven. Als dit er meer zijn dat het maximaal aantal wat de gebruiker
+wilt dan wordt dit later nog naar beneden gehaald om snelheid te bewaren
+"""
 def getAmountOfResults(searchTerm):
     # Dit is om te zoeken in alle databases op de term "orchid"
     handle = Entrez.egquery(term=searchTerm)
@@ -151,33 +183,53 @@ def getAmountOfResults(searchTerm):
             maxResults = row["Count"]
     return maxResults
 
-
+"""Deze functie haalt de pubmedId's op uit pubmed met de zoekterm. Het heeft als retmax de maxResults die eerder
+is vastgesteld.
+"""
 def getPubmedIDs(maxResults, searchTerm):
     print(mindate, maxdate)
     handle = Entrez.esearch(db="pubmed", term=searchTerm, retmax=maxResults, datetype='pdat', mindate=mindate,
                             maxdate=maxdate)
     record = Entrez.read(handle)
     handle.close()
+    # Ik wil alleen de id's
     idlist = record["IdList"]
     print("got id's")
     return idlist
 
-
+"""Deze functie staat in principe los van de flow van dit programma en wordt dan ook niet aanroepen binnen dit script.
+Dit is voor als application.py een genpanel heeft gekregen.
+Het maakt van het genpanel een dictionary met als structuur {gen:[termen]} zodat application.py hiermee kan
+werken. Het retouneerd dit dict direct
+"""
 def readGenePanels(stringPanel):
+    # In deze variabele komt het genpanel met als format {gen:[termen]}
     panels = {}
     for regel in stringPanel.split("\n"):
-        gene = regel.split("\t")[0]
-        panel = regel.split("\t")[1]
-        if not gene in panels.keys():
-            panels[gene] = [panel]
-        else:
-            print("Er mogen geen dubbele in zitten?????")
+        try:
+            gene = regel.split("\t")[0]
+            panel = regel.split("\t")[1]
+            if not gene in panels.keys():
+                panels[gene] = [panel]
+            else:
+                print("Er horen geen dubbele genen in te zitten. Ik bewaar alleen de laatste")
+        except:
+            print("Dit format is niet supported")
     print(panels)
     return panels
 
-
+"""Deze functie geeft de lijst met Id's die eerder zijn verkregen aan pubtator.py, zodat deze daaruit annotatie kan
+halen.
+Het gebruikt hiervoor de volgende variabelen:
+idList = de lijst met Id's
+Deze variabelen zijn er zodat ze door kunnen worden gegeven aan de volgende functie:
+searchTerm = de query
+geneList = de lijst met genen
+searchList = de lijst met klinische termen
+"""
 def ArticleInfoRetriever(idList, searchTerm, geneList, searchList):
     print("Oke ik begin met pubtator")
+    # allAnnotations bevat alle annotaties van alle artikelen  en ziet er uit als {id:{type:[annotaties]}}
     allAnnotations = {}
     idList = list(idList)
     # Ik haal alle dubbele er uit
@@ -185,11 +237,13 @@ def ArticleInfoRetriever(idList, searchTerm, geneList, searchList):
     idList = list(idList)
     slice = 500
     remainingIds = set(idList)
+    # Als er niet met slices wordt gewerkt, wordt alles wat niet in een slice past niet gebruikt
     if len(idList) > slice:
         for i in range(slice, len(idList), slice):
             output = pubtator.SubmitPMIDList(idList[i - slice:i], "biocjson",
                                              "gene, disease, chemical, species, proteinmutation, dnamutation")
             if not output is None:
+                # Ik roep een functie aan die van de JSON file bruikbare data maakt en dat in een class stopt
                 articleInfoProcessor(output, searchTerm, allAnnotations, geneList, searchList)
     else:
         output = pubtator.SubmitPMIDList(idList, "biocjson",
@@ -198,16 +252,65 @@ def ArticleInfoRetriever(idList, searchTerm, geneList, searchList):
             articleInfoProcessor(output, searchTerm, allAnnotations, geneList, searchList)
 
     print("En ik ben klaar met pubtator")
+    # Ik stop allAnnotations in de class
     pubmedEntry.allAnnotations = allAnnotations
+
+    # Ik haal alle overige id's op en gooi deze in Entrez, aangezien pubtator niet voor elk id annotations kan vinden
     allAnnotationIds = set(allAnnotations.keys())
     remainingIds = remainingIds.difference(allAnnotationIds)
-    getPubmedArticlesByID(list(remainingIds), searchTerm, geneList)
+    getPubmedArticlesByID(list(remainingIds), searchTerm)
+
+"""Dit maakt gebruik van de entrez functie om de artikelen op te halen.
+Dit wordt alleen gebruikt als er geen match was met pubtator
+"""
+def getPubmedArticlesByID(idList, searchTerm):
+    print("pubtator had geen match")
+    handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
+                           retmode="text")
+    records = Medline.parse(handle)
+    records = list(records)
+    for record in records:
+        pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"))
+        # om de datum om te zetten naar een werkbaar format
+        date = record.get("DP")
+        if date is not None:
+            date = str(date).split(" ")
+            # Omdat niet alle datums compleet zijn met jaar,maand,dag
+            if len(date) == 1:
+                date.append("Jan")
+                date.append("01")
+            elif len(date) == 2:
+                date.append("01")
+            # Het date format van Entrez is niet optimaal..
+            datemonth = date[1].split("-")[0]
+            datemonth = datemonth.split("/")[0]
+            # Zodat ik het maandnummer heb ipv de maandnaam
+            try:
+                datetime_object = datetimewhole.datetime.strptime(datemonth, "%b")
+                month_number = datetime_object.month
+            except ValueError:
+                # deze exeption is er voor als ik het maandnummer in een onverwacht format krijg
+                month_number = 1
+            date = date[0] + "/" + str(month_number) + "/" + date[2]
+
+        pubmedEntryInstance.setDatePublication(date)
+        pubmedEntryInstance.setAbout(record.get("AB"))
+        pubmedEntryInstance.setTitle(record.get("TI"))
 
 
-# Deze functie haalt de nodige informatie uit het json file
+"""Deze functie haalt de nuttige informatie uit het JSON bestand wat uit pubtator komt en stopt deze informatie
+in de class zodat dit in application.py kan worden gebruikt. Hierna roept het een functie aan om een score te 
+berekenen voor het artikel
+De variabelen zijn:
+pubatoroutput = het json bestand met de output
+searchTerm = de query waar op is gezocht
+allAnnotations = een dict met alle annotaties ({id:{type:[annotaties]}})
+geneList = een lijst met alle genen
+searchList = een lijst met alle klinische termen
+"""
 def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations, geneList, searchList):
-    # todo stop dit allemaal in de database
     if not len(pubtatoroutput) == 0:
+        # pubtator geef allemaal json files terug met een enter ertussen, niet 1 grote
         for entry in pubtatoroutput.split("\n"):
             # {identifier:[[names], count]}
             accessionDict = {}
@@ -265,57 +368,29 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations, geneList, s
                         else:
                             if not name in allAnnotations[pubmedid][type]:
                                 allAnnotations[pubmedid][type].append(name)
+                print("Annotations: ", annotations)
 
                 pubmedEntryInstance.setMLinfo(annotations)
                 pubmedEntryInstance.usedPubtator()
                 pubmedEntryInstance.setScore(calculateScores(termsList, accessionDict, pubmedEntryInstance))
 
 
-def getPubmedArticlesByID(idList, searchTerm, genelist):
-    print("pubtator had geen match")
-    handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
-                           retmode="text")
-    records = Medline.parse(handle)
-    records = list(records)
-    for record in records:
-        pubmedEntryInstance = pubmedEntry(record.get("PMID"), searchTerm, record.get("AU"))
-        # om de datum om te zetten naar een werkbaar format
-        date = record.get("DP")
-        if date is not None:
-            date = str(date).split(" ")
-            if len(date) == 1:
-                date.append("Jan")
-                date.append("01")
-            elif len(date) == 2:
-                date.append("01")
-            # Het date format van Entrez is niet optimaal..
-            print(date[1])
-            datemonth = date[1].split("-")[0]
-            datemonth = datemonth.split("/")[0]
-            # Zodat ik het maandnummer heb ipv de maandnaam
-            try:
-                datetime_object = datetimewhole.datetime.strptime(datemonth, "%b")
-                month_number = datetime_object.month
-            except ValueError:
-                month_number = 1
-            date = date[0] + "/" + str(month_number) + "/" + date[2]
-
-        pubmedEntryInstance.setDatePublication(date)
-        pubmedEntryInstance.setAbout(record.get("AB"))
-        pubmedEntryInstance.setTitle(record.get("TI"))
-
-
+"""Deze functie berekent de score van het artikel
+"""
 def calculateScores(termsList, accessionDict, pubmedInstance):
+    # voorkomensTermen bevat van alle genen hoe vaak het voorkomt
     voorkomensTermen = 0
     for item in alleTermen:
         if item in accessionDict.keys():
             aantalvoorkomensItem = accessionDict.get(item)[1]
             voorkomensTermen += aantalvoorkomensItem
 
+    # dit bevat alle genen die genoemt zijn, dus een count met alle genen
     alleTermenVoorkomens = 0
     for value in accessionDict.values():
         alleTermenVoorkomens += value[1]
 
+    # Dit is allemaal zodat ik een score kan hangen aan de datum
     today = datetime.today()
     then = pubmedInstance.getDatePublication()
     then = then.split("/")
@@ -323,22 +398,26 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
 
     mindateSplit = mindate.split("/")
     maxdateFormatted = date(int(mindateSplit[0]), int(mindateSplit[1]), int(mindateSplit[2]))
-    #### maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
+    # maxdateFormatted = date(int(mindateSplit[2]), int(mindateSplit[1]), int(mindateSplit[0]))
 
+    # Ik deel het aantal maanden geleden door het maximaal aantal maanden geleden, zodat de waarde kleiner is als
+    # het korter geleden is
     maxMonthsAgo = (today.year - maxdateFormatted.year) * 12 + (today.month - maxdateFormatted.month)
 
     try:
+        # De scoreberekening
         score = (((voorkomensTermen / alleTermenVoorkomens) + 1) + (
             (len(termsList) / (len(accessionDict.keys()) + 1)))) / (
                         (monthsAgo / maxMonthsAgo + 1) + 1)
     except ZeroDivisionError:
+        # Voor als alle waarden 0 zijn
         score = 0
-    print("score: " + str(score))
     return score
 
-
+"""Deze class bevat alle informatie om op te halen in application.py
+"""
 class pubmedEntry:
-    # The __ make this a private attribute to encapsulate it
+    # The __ makes this a private attribute to encapsulate it
     __geneID = ""
     __datePublication = 0
     __about = ""
@@ -404,4 +483,4 @@ class pubmedEntry:
         return self.__score
 
 
-# main(["Homo sapiens"], [], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 5000)
+#main(["Homo sapiens"], [], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 5000)
