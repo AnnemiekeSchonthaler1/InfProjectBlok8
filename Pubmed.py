@@ -22,7 +22,6 @@ from time import strptime
 mindate = ""
 maxdate = ""
 
-
 # Dit zijn alle termen die voorkomen in alle artikelen van de gezochte termen en daar de accessiecodes van
 alleTermen = []
 
@@ -97,6 +96,8 @@ geneList = de lijst met genen
 dictsynonym = Een dict die gebruikt word om de synoniemen van termen te houden. Deze wordt hier gevuld.
 dictsynonym ziet er uit als {gen:[synoniem]}
 """
+
+
 def makeQuery(searchList, geneList, dictsynonym):
     searchTerm = "{}"
 
@@ -104,7 +105,7 @@ def makeQuery(searchList, geneList, dictsynonym):
         term = term + " OR {} "
         searchTerm = searchTerm.format(str(term))
     searchTerm = searchTerm.replace(" OR {}", "")
-    searchTerm += " AND {},"
+    searchTerm += " AND {}"
 
     # Ik roep een functie aan om synoniemen te zoeken
     try:
@@ -117,7 +118,7 @@ def makeQuery(searchList, geneList, dictsynonym):
     # Zodat er geen or en and in de query blijft staan
     searchTerm = searchTerm.replace("OR {}", "")
     searchTerm = searchTerm.replace("AND {}", "")
-    searchTerm = searchTerm.replace("OR                          ", "")
+    searchTerm = searchTerm.replace("OR    ", "")
     print(searchTerm)
     return searchTerm, geneList
 
@@ -129,6 +130,8 @@ De variabelen zijn:
 geneList = de lijst met genen
 dictSynonyms = een dict om de genen en synoniemen uit elkaar te houden
 """
+
+
 def findSynonyms(geneList, dictSynonyms):
     records = ""
     connection = mysql.connector.connect(
@@ -170,6 +173,8 @@ def findSynonyms(geneList, dictSynonyms):
 in andere functies als retmax kan worden gegeven. Als dit er meer zijn dat het maximaal aantal wat de gebruiker
 wilt dan wordt dit later nog naar beneden gehaald om snelheid te bewaren
 """
+
+
 def getAmountOfResults(searchTerm):
     # Dit is om te zoeken in alle databases op de term "orchid"
     handle = Entrez.egquery(term=searchTerm)
@@ -182,9 +187,12 @@ def getAmountOfResults(searchTerm):
             maxResults = row["Count"]
     return maxResults
 
+
 """Deze functie haalt de pubmedId's op uit pubmed met de zoekterm. Het heeft als retmax de maxResults die eerder
 is vastgesteld.
 """
+
+
 def getPubmedIDs(maxResults, searchTerm):
     print(mindate, maxdate)
     handle = Entrez.esearch(db="pubmed", term=searchTerm, retmax=maxResults, datetype='pdat', mindate=mindate,
@@ -196,11 +204,14 @@ def getPubmedIDs(maxResults, searchTerm):
     print("got id's")
     return idlist
 
+
 """Deze functie staat in principe los van de flow van dit programma en wordt dan ook niet aanroepen binnen dit script.
 Dit is voor als application.py een genpanel heeft gekregen.
 Het maakt van het genpanel een dictionary met als structuur {gen:[termen]} zodat application.py hiermee kan
 werken. Het retouneerd dit dict direct
 """
+
+
 def readGenePanels(stringPanel):
     # In deze variabele komt het genpanel met als format {gen:[termen]}
     panels = {}
@@ -217,6 +228,7 @@ def readGenePanels(stringPanel):
     print(panels)
     return panels
 
+
 """Deze functie geeft de lijst met Id's die eerder zijn verkregen aan pubtator.py, zodat deze daaruit annotatie kan
 halen.
 Het gebruikt hiervoor de volgende variabelen:
@@ -226,6 +238,8 @@ searchTerm = de query
 geneList = de lijst met genen
 searchList = de lijst met klinische termen
 """
+
+
 def ArticleInfoRetriever(idList, searchTerm, geneList, searchList):
     print("Oke ik begin met pubtator")
     # allAnnotations bevat alle annotaties van alle artikelen  en ziet er uit als {id:{type:[annotaties]}}
@@ -259,9 +273,12 @@ def ArticleInfoRetriever(idList, searchTerm, geneList, searchList):
     remainingIds = remainingIds.difference(allAnnotationIds)
     getPubmedArticlesByID(list(remainingIds), searchTerm)
 
+
 """Dit maakt gebruik van de entrez functie om de artikelen op te halen.
 Dit wordt alleen gebruikt als er geen match was met pubtator
 """
+
+
 def getPubmedArticlesByID(idList, searchTerm):
     print("pubtator had geen match")
     handle = Entrez.efetch(db="pubmed", id=idList, rettype="medline",
@@ -307,6 +324,8 @@ allAnnotations = een dict met alle annotaties ({id:{type:[annotaties]}})
 geneList = een lijst met alle genen
 searchList = een lijst met alle klinische termen
 """
+
+
 def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations, geneList, searchList):
     if not len(pubtatoroutput) == 0:
         # pubtator geef allemaal json files terug met een enter ertussen, niet 1 grote
@@ -356,25 +375,20 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations, geneList, s
                                 accessionDict[identifier][0].append(name)
                             accessionDict[identifier][1] += 1
 
-                        # Ik stop het in de twee dicts
-                        if not type in annotations[pubmedid].keys():
-                            annotations[pubmedid][type] = [name]
-                        else:
-                            annotations[pubmedid][type].append(name)
-
                         if not type in allAnnotations[pubmedid].keys():
                             allAnnotations[pubmedid][type] = [name]
                         else:
                             if not name in allAnnotations[pubmedid][type]:
                                 allAnnotations[pubmedid][type].append(name)
 
-                pubmedEntryInstance.setMLinfo(annotations)
                 pubmedEntryInstance.usedPubtator()
                 pubmedEntryInstance.setScore(calculateScores(termsList, accessionDict, pubmedEntryInstance))
 
 
 """Deze functie berekent de score van het artikel
 """
+
+
 def calculateScores(termsList, accessionDict, pubmedInstance):
     # voorkomensTermen bevat van alle genen hoe vaak het voorkomt
     voorkomensTermen = 0
@@ -412,8 +426,11 @@ def calculateScores(termsList, accessionDict, pubmedInstance):
         score = 0
     return score
 
+
 """Deze class bevat alle informatie om op te halen in application.py
 """
+
+
 class pubmedEntry:
     # The __ makes this a private attribute to encapsulate it
     __geneID = ""
@@ -481,4 +498,5 @@ class pubmedEntry:
         return self.__score
 
 
-#main(["variant", "variants", "mutation", "mutations", "substitutions", "substitution", "loss of function" , "loss-of-function" , "haplo-insufficiency" , "haploinsufficiency" , "bi-allelic" , "biallelic" , "recessive" , "homozygous" , "heterozygous" , "de novo" , "dominant" ,  "X-linked" , "intellectual" , "mental retardation" , "cognitive" , "developmental" , "neurodevelopmental"], ["KDM3B"], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 500000)
+# main(["variant", "variants", "mutation", "mutations", "substitutions", "substitution", "loss of function" , "loss-of-function" , "haplo-insufficiency" , "haploinsufficiency" , "bi-allelic" , "biallelic" , "recessive" , "homozygous" , "heterozygous" , "de novo" , "dominant" ,  "X-linked" , "intellectual" , "mental retardation" , "cognitive" , "developmental" , "neurodevelopmental"], ["KDM3B"], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 500000)
+# main(["Homo sapiens"], [], "kip@kip.nl", "06-12-2019", "06-12-2020", "", 5000)
