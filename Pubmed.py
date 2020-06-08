@@ -104,7 +104,7 @@ def makeQuery(searchList, geneList, dictsynonym):
         term = term + " OR {} "
         searchTerm = searchTerm.format(str(term))
     searchTerm = searchTerm.replace(" OR {}", "")
-    searchTerm += " AND {}"
+    searchTerm += " AND {},"
 
     # Ik roep een functie aan om synoniemen te zoeken
     try:
@@ -116,8 +116,8 @@ def makeQuery(searchList, geneList, dictsynonym):
         searchTerm = searchTerm.format(gene + " OR {}")
     # Zodat er geen or en and in de query blijft staan
     searchTerm = searchTerm.replace("OR {}", "")
-    searchTerm = searchTerm.replace("OR", "")
     searchTerm = searchTerm.replace("AND {}", "")
+    print(searchTerm)
     return searchTerm, geneList
 
 
@@ -480,4 +480,4 @@ class pubmedEntry:
         return self.__score
 
 
-#main(["Homo sapiens"], [], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 5000)
+# main(["variant", "variants", "mutation", "mutations", "substitutions", "substitution", "loss of function" , "loss-of-function" , "haplo-insufficiency" , "haploinsufficiency" , "bi-allelic" , "biallelic" , "recessive" , "homozygous" , "heterozygous" , "de novo" , "dominant" ,  "X-linked" , "intellectual" , "mental retardation" , "cognitive" , "developmental" , "neurodevelopmental"], ["KDM3B"], "annemiekeschonthaler@gmail.com", "06-12-2019", "06-12-2020", "", 5000)
