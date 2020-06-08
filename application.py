@@ -91,10 +91,17 @@ def results():
 
         # make a csv string to download from the website
         csv_data = make_csv_data(annotation_entries)
+        print(len(full_dicy['articles']))
 
-    return render_template("Searchpage.html", genedic=full_dicy, infodic=annotation_entries,
-                           recipe_dict=count_data, entries=pubmed_entries, data=data, csv_data=csv_data,
-                           gene_panel=gene_panel, show_result=show_result, plot_data=plot_data)
+    if full_dicy.get('articles') and len(full_dicy['articles']) > 1000:
+        print("im gonna render without visualisation")
+        return render_template("Searchpage_without.html", genedic=full_dicy, infodic=annotation_entries,
+                               recipe_dict=count_data, entries=pubmed_entries, data=data, csv_data=csv_data,
+                               gene_panel=gene_panel, show_result=show_result, plot_data=plot_data)
+    else:
+        return render_template("Searchpage.html", genedic=full_dicy, infodic=annotation_entries,
+                               recipe_dict=count_data, entries=pubmed_entries, data=data, csv_data=csv_data,
+                               gene_panel=gene_panel, show_result=show_result, plot_data=plot_data)
 
 
 def getForm_data(result):
@@ -259,7 +266,7 @@ def fill_genedic(gene_dic, infodic, gene_panel):
             for basic_gene, dic in gene_dic.items():
                 for gene in dic.keys():
                     if 'Gene' in infodic[id_entry].keys() and gene in infodic[id_entry]['Gene'] \
-                                                          and item not in gene_dic[basic_gene][gene]:
+                            and item not in gene_dic[basic_gene][gene]:
                         # if it has annotation and the searched gene is in the annotation we put it in the gene dic
                         gene_dic[basic_gene][gene].append(item)
                         # it also gets added to the amount of articles per gene

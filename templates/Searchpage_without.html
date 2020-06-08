@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Pubmed Search</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="">
+<script src='https://kit.fontawesome.com/a076d05399.js'></script>
+<script src="https://kryogenix.org/code/browser/sorttable/sorttable.js"></script>
+<script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/v8/js/anychart-tag-cloud.min.js"></script>
+<link rel="stylesheet" href="https://codepen.io/kjbrum/pen/myyZLq">
+<link rel="stylesheet" href="https://codepen.io/kjbrum/pen/myyZLq">
+<link rel="script" href="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js">
+<link rel="script" href="https://s.codepen.io/assets/libs/modernizr.js">
+</head>
+<style>
+.w3-theme-blue {color:#fff !important;background-color: #bcccfe !important}
+
+.w3-theme-l3 {color:#fff !important; background-color: #2b2b2b !important}
+.w3-theme-l2 {color:#fff !important; background-color: #5d6264 !important}
+.bluey {color:#fff !important; background-color: #64bfe4 !important}
+.pinky {color:#fff !important;background-color: #cb74a7 !important}
+.bluegreeny {color:#fff !important; background-color: #5da8a2 !important}
+.darkpurpley {color:#fff !important; background-color: #3d3479 !important}
+
+body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
+#div1 {
+  width: 350px;
+  height: 70px;
+  padding: 10px;
+  border: 1px solid #aaaaaa;
+}
+.w3-row-padding img {margin-bottom: 12px}
+/* Set the width of the sidebar to 120px */
+.w3-sidebar {width: 120px;background: #2b2b2b;}
+/* Add a left margin to the "page content" that matches the width of the sidebar (120px) */
+#main {margin-left: 120px}
+/* Remove margins from "page content" on small screens */
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+td,
+th {
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #ddd;
+}
+.textarea{
+  width:100%;
+  overflow:hidden;
+  height:150px;
+  max-height:150px;
+  border:1px solid #ccc;
+  overflow-y: auto;
+}
+
+/* The scrollable part */
+
+.scrollable {
+  min-height: 100px;
+  max-height: 300px;
+  width: 100%;
+  overflow-y: scroll;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  position: sticky;
+  background-color: white;
+  z-index: 2;
+  top: 0;
+}
+    .container {
+  overflow: hidden;
+}
+
+.filterDiv {
+  display: none; /* Hidden by default */
+}
+
+/* The "show" class is added to the filtered elements */
+.show {
+  display: block;
+}
+
+/* Style the buttons */
+.btn {
+}
+
+/* Add a light grey background on mouse-over */
+.btn:hover {
+
+}
+
+/* Add a dark background to the active button */
+.w3-btn.active {
+ background-color: #666;
+  color: white;
+}
+</style>
+<body class="w3-theme-l2">
+
+<!-- Icon Bar (Sidebar - hidden on small screens) -->
+<nav class="w3-sidebar w3-card-4 w3-bar-block w3-small w3-hide-small w3-center ">
+  <!-- Avatar image in top left corner -->
+  <img class=" w3-round-xlarge w3-section" src="../static/Spooder.png" style="width:100%" alt="icon">
+  <a href='{{ url_for('hello_world') }}' class="w3-round-xlarge w3-wide w3-opacity w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar  w3-border-white bluegreeny w3-hover-white w3-section">
+    <i class="fa fa-home w3-xxlarge"></i>
+    <p>HOME</p>
+  </a>
+    <a href='{{ url_for('results') }}' class="w3-round-xlarge w3-wide w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar  w3-border-white bluey w3-hover-white w3-section">
+    <i class="fa fa-search w3-xxlarge"></i>
+    <p>SEARCH</p>
+  </a>
+    <a onclick="download_csv()" class="w3-round-xlarge w3-wide w3-bar-item w3-button w3-padding-large w3-topbar w3-bottombar  w3-border-white darkpurpley w3-hover-white w3-section">
+    <i class="fa fa-download w3-xxlarge"></i>
+    <p style="font-size: 10px">Download</p>
+  </a>
+
+</nav>
+
+<!-- Navbar on small screens (Hidden on medium and large screens) -->
+<div class="w3-top w3-hide-large w3-hide-medium" id="myNavbar">
+  <div class="w3-bar w3-theme-l3 w3-hover-opacity-off w3-opacity-min w3-center w3-small">
+    <a href='{{ url_for('hello_world') }}' class="w3-bar-item bluegreeny w3-button w3-text-white" style="width:25% !important">HOME</a>
+
+    <a href='{{ url_for('results') }}' class="w3-bar-item w3-button bluey w3-text-white" style="width:25% !important">SEARCH</a>
+  </div>
+</div>
+
+<!-- Page Content -->
+<div class="w3-padding-large" id="main">
+  <!-- Header/Home -->
+  <header class="w3-card w3-padding-32 w3-center w3-theme-l3" id="home">
+      <span class="w3-hide-small"></span>  <div class=" bluegreeny w3-round-xlarge w3-margin"><h1 class=" w3-margin" style="font-size: 55px">PUBMED SEARCH <img src="../static/Spooder.png" style="width:10%" alt="icon"></h1></div>
+    <p>For easy up to date information</p>
+  </header>
+
+ <!-- FORM -->
+    <div class="w3-card-4 w3-white w3-section">
+  <div class="w3-container w3-theme-l3 w3-padding">
+      <div class="w3-panel bluey w3-round-xlarge" style="width: 200px;"><h2 class="w3-wide" style="font-size: 30px;">Search</h2></div>
+  </div>
+  <form class="w3-container " method="post" action="https://hannl-hlo-bi2a1-app.azurewebsites.net/result">
+    <p>
+    <label class="w3-text-black"><b>disease-characteristics</b></label>
+    <input placeholder="Searchterm1 , Searchterm2" class="w3-input w3-border w3-white" name="disease_characteristic" type="text" required></p>
+    <p>
+    <label class="w3-text-black"><b>Specified Organism</b></label>
+    <input placeholder="Mouse (*optional)" class="w3-input w3-border w3-white" name="organism" type="text">
+    <p>
+    <label class="w3-text-black"><b>E-mail</b></label>
+    <input  placeholder="Your.Name.Here@example.org" class="w3-input w3-border w3-white" name="mail" type="text" pattern="\S+@\S+" required></p>
+    <p><label class="w3-text-black"><b>Gene panel</b></label></p>
+        <p>
+            <label>
+            <textarea placeholder="Paste the contents of a genepanel.txt file here"
+                      name="gene_panel" style="width: 100%"></textarea>
+            </label>
+    <p>
+      <p><label class="w3-text-black"><b>Gene List</b></label></p>
+        <p>
+            <label>
+            <textarea placeholder="Gene1 &#10;Gene2&#10;Gene3 &#10;etc.."
+                      name="gene_list" style="width: 100%"></textarea>
+            </label>
+        </p>
+    <div class="w3-row-padding">
+        <div class="w3-third">
+    <select class="w3-select w3-section w3-cell" name="publication_date">
+      <option value="" disabled selected>Choose max publication date</option>
+      <option value="2">3 Months</option>
+      <option value="6">6 Months</option>
+      <option value="9">9 Months</option>
+      <option value="12">1 Year</option>
+      <option value="24">2 Years</option>
+    </select>
+        </div>
+        <div class="w3-third">
+        <select class="w3-select w3-section w3-cell" name="amount_articles" required>
+            <option value="" disabled selected>How many articles to retrieve</option>
+            <option value=5000> 5000</option>
+            <option value=10000> 10000</option>
+            <option value=25000> 25000</option>
+            <option value=50000> 50000</option>
+            <option value=100000> 100000</option>
+            <option value=200000> 200000</option>
+            <option value=300000> 300000</option>
+            <option value=400000> 400000</option>
+            <option value=500000> 500000</option>
+        </select>
+        </div>
+    </div>
+    <p>
+        <button class="w3-btn bluey w3-round-xlarge w3-large w3-text-white" style="width: 10%"><b>Search</b>  <i class="fa fa-search w3-large"></i></button></p>
+  </form>
+</div>
+     <!--  end FORM -->
+
+ <!-- start Results  link to pubmed article https://www.ncbi.nlm.nih.gov/pubmed/?term= item.pubmedId-->
+    {% if show_result %}
+    <div class="w3-card-4 w3-white w3-section">
+  <div class="w3-container w3-theme-l3">
+      <div class="w3-panel pinky w3-round-xlarge" style="width: 300px"> <h2 class="w3-wide">Results <img src="../static/Spooder.png" style="width:100px;height: 50px" alt="icon"></h2></div>
+  </div>
+    <div class=" w3-container w3-cell-row w3-section w3-white" style="height: 300px;width: 100%">
+        {% if recipe_dict != None%}
+        <div class="w3-container w3-cell w3-margin" style="width: 100%; height: 380px" >
+            <img src="../static/Spooder.png" style="width:920px;height: 370px" alt="icon">
+            <h2> Sorry.. but due to memory issues we wont display any graphs</h2>
+        </div>
+        <div class=" w3-container " style="width: 100%; height: 380px">
+            <div class="scrollable w3-margin" style="width: 100%">
+              <table id="count_table" class="sortable w3-table-all w3-text-black">
+                <tr>
+                  <th>Gene</th>
+                  <th>Amount of Articles</th>
+                  <th>Gene panel</th>
+                </tr>
+                  {% for gene_name, value in recipe_dict.items() %}
+                <tr>
+                  <td>{{ gene_name }}</td>
+                  <td>{{ value[0] }}</td>
+                  <td>{{ value[1] }}</td>
+                </tr>
+                  {% endfor %}
+              </table>
+            </div>
+         <input type="text" class="w3-margin w3-border" style="width: 100%" id="myInput1" onkeyup="myFunction(0, 'count_table')" placeholder="Search for Gene.." title="Type in a Gene">
+        </div>
+        {% endif %}
+    </div>
+    <div class="w3-bar w3-theme-l3">
+  <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink pinky" onclick="openCity(event,'Visual')">Visualised data</button>
+  <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink " onclick="openCity(event,'Table')">Table of results</button>
+  <button class=" w3-section w3-round-xlarge w3-bar-item w3-button tablink " onclick="openCity(event,'Table_none')">Table of results without annotation</button>
+    </div>
+    <div id="Visual" class="w3-container city">
+    <div id="myBtnContainer" style="width: 100%">
+  <button class="w3-btn w3-border w3-margin active" style="width: 31%" onclick="filterSelection('all')"> Show all</button>
+  <button class="w3-btn w3-border w3-margin" style="width: 31%" onclick="filterSelection('yes_gene')"> in Gene panel</button>
+  <button class="w3-btn w3-border w3-margin" style="width: 31%" onclick="filterSelection('no_gene')"> not in Gene panel</button>
+    </div>
+        {% if"articles" in genedic.keys() %}
+     {% for name, gene in genedic["articles"].items()%}
+
+         <div class = "w3-cell-row w3-container w3-white, w3-margin" style="width: 100%">
+            <div class="w3-cell" style="width: 90%">
+            {% if gene_panel %}
+            {% if name in gene_panel.keys() %}
+             <button onclick="myopen('{{name }}')" class=" filterDiv yes_gene w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
+                 {{ name }}  <i class='fas fa-angle-down'></i> </button>
+                {% else %}
+                <button onclick="myopen('{{name }}')" class=" filterDiv no_gene w3-button w3-block w3-hover-black  bluey w3-round-xlarge w3-left-align">
+                 {{ name }}  <i class='fas fa-angle-down'></i> </button>
+            {% endif %}
+            {% else %}
+                 <button onclick="myopen('{{name }}')" class="w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
+                 {{ name }}  <i class='fas fa-angle-down'></i> </button>
+            {% endif %}
+            <div id='{{name }}' class="w3-container w3-hide  w3-animate-opacity">
+        {%for omim_name, omim_id in genedic["omim_id"].items() %}
+        {%if name == omim_name %}
+            <div class="w3-container">
+
+            <a href="https://omim.org/entry/{{omim_id[0] }}"  target="_blank">
+            <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">OMIM</button>
+            </a>
+            <a href="https://www.uniprot.org/uniprot/{{omim_id[1] }}"  target="_blank">
+            <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">UNIPROT</button>
+            </a>
+            <a href="https://www.ncbi.nlm.nih.gov/gene/{{omim_id[2] }}"  target="_blank">
+            <button class="w3-button w3-white w3-border w3-wide w3-margin" style="width: 30%">NCBI</button>
+            </a>
+            </div>
+              {%endif %}
+        {%endfor %}
+              <ul class="w3-ul">
+                {% for genename , list in gene.items() %}
+                    <li class="w3-theme-l2 w3-section w3-round-large"> <b>{{ genename }}</b> </li>
+                    {% for item in list %}
+                        <li>
+                        <div class="w3-bar w3-light">
+                            <div class=" w3-button w3-left"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ item.pubmedID }}" target="_blank">{{item.getTitle()}}     <span class="w3-tag w3-margin-left w3-round-large bluey w3-center">{{ item.getScore() }}</span></a></div>
+                        </div>
+                        </li>
+                    {% endfor %}
+                {% endfor %}
+              </ul>
+            </div>
+         </div>
+         </div>
+     {% endfor %}
+    {% endif %}
+    </div>
+    <div id="Table" class="w3-container city" style="display:none">
+        <input type="text" class="w3-margin w3-border" style="width: 25%" id="myInput3" onkeyup="myFunction(3, 'table')" placeholder="Search for Gene.." title="Type in a Gene">
+        <input type="text" class="w3-margin w3-border" style="width: 25%" id="myInput4" onkeyup="myFunction(4, 'table')" placeholder="Search for Disease.." title="Type in a Disease">
+        <div class="w3-responsive">
+              <table id="table" style="width: 100%;" class="sortable w3-table-all w3-text-black w3-margin w3-hoverable">
+              <thead>
+                <tr>
+                  <th>Pubmed-ID</th>
+                  <th>Score</th>
+                  <th>Publication date</th>
+                  <th>Genes</th>
+                  <th>Diseases</th>
+                  <th>Mutations</th>
+                  <th>Species</th>
+                </tr>
+              </thead>
+                  {% for id, object  in entries.items() %}
+                {% if id in infodic.keys() and object.getScore() != None%}
+                <tr>
+                    <td><p class="w3-tooltip"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ id }}">{{ id }}<span class="w3-text">(<em>{{ object.getTitle() }}</em>)</span></a></p></td>
+                  <td>{{ object.getScore() }}</td>
+                  <td>{{ object.getDatePublication() }}</td>
+                      {% if "Gene" in infodic[id].keys() %}
+                      <td>{{ infodic[id]["Gene"] }}</td>
+                          {% else %}
+                          <td> None </td>
+                          {% endif %}
+                      {% if "Disease" in infodic[id].keys() %}
+                      <td>{{ infodic[id]["Disease"] }}</td>
+                          {% else %}
+                          <td> None </td>
+                          {% endif %}
+                      {% if "Mutation" in infodic[id].keys() %}
+                      <td>{{ infodic[id]["Mutation"] }}</td>
+                          {% else %}
+                          <td> None </td>
+                          {% endif %}
+                      {% if "Species" in infodic[id].keys() %}
+                      <td>{{ infodic[id]["Species"] }}</td>
+                          {% else %}
+                          <td> None </td>
+                          {% endif %}
+                 {% endif %}
+                </tr>
+                  {% endfor %}
+
+              </table>
+        </div>
+    </div>
+    <div id="Table_none" class="w3-container city" style="display:none">
+        <div class="w3-responsive">
+              <table id="table" style="width: 100%;" class="sortable w3-table-all w3-text-black w3-margin w3-hoverable">
+              <thead>
+                <tr>
+                  <th>Article title</th>
+                  <th>Score</th>
+                  <th>Publication date</th>
+                </tr>
+              </thead>
+                  {% for id, object  in entries.items() %}
+                    {% if id not in infodic.keys() and object.getScore() != None%}
+                <tr>
+                    <td><p class="w3-tooltip"><a href="https://www.ncbi.nlm.nih.gov/pubmed/?term={{ id }}">{{ object.getTitle() }}</a></p></td>
+                  <td>{{ object.getScore() }}</td>
+                  <td>{{ object.getDatePublication() }}</td>
+                 {% endif %}
+                </tr>
+                  {% endfor %}
+
+              </table>
+        </div>
+    </div>
+    </div>
+{% endif %}
+</div>
+<script>
+function myopen(id) {
+    const x = document.getElementById(id);
+    if (x.className.indexOf("w3-show") === -1) {
+    x.className += " w3-show";
+  } else {
+    x.className = x.className.replace(" w3-show", "");
+  }
+}
+</script>
+
+<script>
+var jsArrayOfItems = {{csv_data | safe}};
+
+
+function download_csv() {
+    var csv = 'ID,Gene,Mutations,Diseases,Species\n';
+    alert(jsArrayOfItems);
+
+    csv = csv + jsArrayOfItems;
+
+    console.log(csv);
+    var hiddenElement = document.createElement('a');
+    hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+    hiddenElement.target = '_blank';
+    hiddenElement.download = 'all_articles.txt';
+    hiddenElement.click();
+}
+</script>
+<script>
+function openCity(evt, cityName) {
+  var i, x, tablinks;
+  x = document.getElementsByClassName("city");
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablink");
+  for (i = 0; i < x.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" pinky", "");
+  }
+  document.getElementById(cityName).style.display = "block";
+  evt.currentTarget.className += " pinky";
+}
+</script>
+<script>
+function myFunction(col_num, table_id) {
+  var input, filter, table, tr, td, i, txtValue;
+  if (col_num === 0){
+  input = document.getElementById("myInput1");}
+  if (col_num === 3){
+  input = document.getElementById("myInput3");}
+  if (col_num === 4){
+  input = document.getElementById("myInput4");}
+  filter = input.value.toUpperCase();
+  table = document.getElementById(table_id);
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[col_num];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+filterSelection("all");
+function filterSelection(c) {
+  var x, i;
+  x = document.getElementsByClassName("filterDiv");
+  if (c === "all") c = "";
+  // Add the "show" class (display:block) to the filtered elements, and remove the "show" class from the elements that are not selected
+  for (i = 0; i < x.length; i++) {
+    w3RemoveClass(x[i], "show");
+    if (x[i].className.indexOf(c) > -1) w3AddClass(x[i], "show");
+  }
+}
+
+// Show filtered elements
+function w3AddClass(element, name) {
+  var i, arr1, arr2;
+  arr1 = element.className.split(" ");
+  arr2 = name.split(" ");
+  for (i = 0; i < arr2.length; i++) {
+    if (arr1.indexOf(arr2[i]) === -1) {
+      element.className += " " + arr2[i];
+    }
+  }
+}
+
+// Hide elements that are not selected
+function w3RemoveClass(element, name) {
+  var i, arr1, arr2;
+  arr1 = element.className.split(" ");
+  arr2 = name.split(" ");
+  for (i = 0; i < arr2.length; i++) {
+    while (arr1.indexOf(arr2[i]) > -1) {
+      arr1.splice(arr1.indexOf(arr2[i]), 1);
+    }
+  }
+  element.className = arr1.join(" ");
+}
+
+// Add active class to the current control button (highlight it)
+var btnContainer = document.getElementById("myBtnContainer");
+var btns = btnContainer.getElementsByClassName("w3-btn");
+for (var i = 0; i < btns.length; i++) {
+  btns[i].addEventListener("click", function() {
+    var current = document.getElementsByClassName("active");
+    current[0].className = current[0].className.replace(" active", "");
+    this.className += " active";
+  });
+}
+</script>
+</body>
+</html>
