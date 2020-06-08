@@ -22,8 +22,7 @@ from time import strptime
 mindate = ""
 maxdate = ""
 
-# Dit is een dict met de gene classes, hij ziet er uit als {pubmedid:geneInstance}
-geneclassDict = {}
+
 # Dit zijn alle termen die voorkomen in alle artikelen van de gezochte termen en daar de accessiecodes van
 alleTermen = []
 
@@ -52,11 +51,10 @@ def main(searchList, geneList, email, searchDate, today, organism, maxArticles):
     Entrez.email = email
 
     # Zodat alle waarden bij elke run worden geleegd
-    global geneclassDict
     global alleTermen
-    geneclassDict = {}
     alleTermen = []
     pubmedEntry.allAnnotations = {}
+    pubmedEntry.instancesDict = {}
 
     # Ik voeg het organisme toe aan de searchList
     searchList.append(organism)
@@ -368,7 +366,6 @@ def articleInfoProcessor(pubtatoroutput, searchTerm, allAnnotations, geneList, s
                         else:
                             if not name in allAnnotations[pubmedid][type]:
                                 allAnnotations[pubmedid][type].append(name)
-                print("Annotations: ", annotations)
 
                 pubmedEntryInstance.setMLinfo(annotations)
                 pubmedEntryInstance.usedPubtator()
