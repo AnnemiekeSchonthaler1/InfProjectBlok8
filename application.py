@@ -250,19 +250,25 @@ def fill_genedic(gene_dic, infodic, gene_panel):
     :param gene_panel: dictionary of gene panel {key = gene, value = [panels]}
     :return: filled gene dic, the counts of articles per gene and their panels, updated annotations(added to by regex)
     """
+    # instance variables
     count_data = {}
+    # go through all articles and see if they have annotation then add them to the corresponding gene found in it
     for item in Pubmed.pubmedEntry.instancesDict.values():
-        id = item.pubmedID
-        if infodic.get(id):
+        id_entry = item.pubmedID
+        if infodic.get(id_entry):
             for basic_gene, dic in gene_dic.items():
                 for gene in dic.keys():
-                    if 'Gene' in infodic[id].keys() and gene in infodic[id]['Gene']:
-                        if item not in gene_dic[basic_gene][gene]:
-                            gene_dic[basic_gene][gene].append(item)
-                            add_to_count(item, gene, count_data, gene_panel)
+                    if 'Gene' in infodic[id_entry].keys() and gene in infodic[id_entry]['Gene'] \
+                                                          and item not in gene_dic[basic_gene][gene]:
+                        # if it has annotation and the searched gene is in the annotation we put it in the gene dic
+                        gene_dic[basic_gene][gene].append(item)
+                        # it also gets added to the amount of articles per gene
+                        add_to_count(item, gene, count_data, gene_panel)
 
         else:
+            # if there is no annotation we will try to at least annotate the genes found in the abstract with regex
             gene_found = search_for_genes_regex(item, infodic)
+            # all genes found are in a list and will be added to the gene dic and the amount per gene
             for gene_name in gene_found:
                 add_to_count(item, gene_name, count_data, gene_panel)
                 if gene_name not in gene_dic.keys():
@@ -282,23 +288,27 @@ def search_for_genes_regex(item, infodic):
     {key = pubmed_id, value = {key = type, value = [annotation]}}
     :return: list of genes found with the regex
     """
+    # all items without annotation get a score of -1
     item.setScore(-1)
+    # instance variables
     gene_found = []
-    annotations = {}
-
     about = item.getAbout()
     id_entry = item.pubmedID
+
+    # find the genes in the abstract
     x = re.findall('[A-Z0-9]*', about)
+    # for all the genes found check if they're actually useful
     for value in x:
         if len(value) > 2 and x.count(
                 value) > 1 and \
                 value not in ["RNA", "DNA", "BMI", "MIM", "MRI", "ICU"] and \
                 value.isdigit() is False \
                 and value not in gene_found:
-
+            # then check if it was found between brackets this usually means it is an illness rather than a gene
+            # (not always true but for the sake of more accurate genes)
             if "({})".format(value) not in about and "({}s)".format(value) not in about:
                 gene_found.append(value)
-                annotations.update({id_entry: {"Gene": gene_found}})
+                # update the dictionary with the new annotation info
                 infodic.update({id_entry: {"Gene": gene_found}})
     return gene_found
 
@@ -310,6 +320,7 @@ def do_MATH_months(sourcedate, months):
     :param months: amount of months to add or subtract (input a negative number to subtract)
     :return: the date with the amount added or subtracted
     """
+    # just calculate the date
     month = sourcedate.month - 1 + months
     year = sourcedate.year + month // 12
     month = month % 12 + 1
@@ -323,8 +334,10 @@ def make_wordcloud_dataframe(data, annotation_entries):
     :param data: empty dictionary
     :return: filled data, {key = pubmed_id, value = [word, frequency, type of annotation]}
     """
+    # for all annotations in the dictionary update the data with the entry
     for id_entry, dictionary in annotation_entries.items():
         data.update({id_entry: []})
+        # add to the value of the entry the words with their corresponding frequency
         for type_annotation, listy in dictionary.items():
             frequency = collections.Counter(listy)
             for word in listy:
@@ -343,8 +356,10 @@ def make_csv_data(data):
                                                      and the words with /
                                                     every line ends with \n
     """
+    # instance variables
     sentence = []
     thing = ['', '', '', '', '']
+    # add the stuff to the right place and join it with the right separator
     for id_entry, dic in data.items():
         thing = ['', '', '', '', '']
         thing[0] = id_entry
@@ -364,9 +379,12 @@ def make_csv_data(data):
             thing[4] = "/".join(dic['Species'])
         else:
             thing[4] = ' '
+        # separate the columns with a comma
         thing = ", ".join(thing)
         sentence.append(thing)
+    # make sure all of the entries are on a different line by using \n
     sentence = "\n".join(sentence)
+    # add the string to a list
     sentence = [sentence]
 
     return sentence
