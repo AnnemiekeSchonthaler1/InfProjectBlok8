@@ -23,7 +23,6 @@ def hello_world():
 
 
 @app.route('/result', methods=['POST', 'GET'])
-
 def results():
     """
     The results function processes the user input and sends it off to the pubmed and pubtator search function
@@ -31,6 +30,7 @@ def results():
     the results shown once the search form is submitted
     :return: search page html with or without results
     """
+    # instance all variables
     show_result = False
     full_dicy = {}
     annotation_entries = {}
@@ -40,47 +40,61 @@ def results():
     gene_panel = ""
     today = datetime.date.today()
     csv_data = ""
+    plot_data = False
 
+    # get all data from the form once its posted
     if request.method == 'POST':
         show_result = True
         result = request.form
-        pub_date, disease_char, gene_list, mail, search_date, organism, search_list, gene_panel,amount_of_articles = getForm_data(result)
+        pub_date, disease_char, gene_list, mail, search_date, organism, search_list, gene_panel, amount_of_articles, plot_data = getForm_data(
+            result)
 
         print(pub_date, disease_char, gene_list, mail, search_date, organism, search_list,
               amount_of_articles)
+        # send all pre processed form data to Pubmed search
         Pubmed.main(searchList=search_list, geneList=gene_list, email=mail, searchDate=search_date, today=today,
                     organism=organism, maxArticles=amount_of_articles)
+        # collect gathered data from Pubmed Search (all articles, annotation of articles, synonyms of genes)
         pubmed_entries = Pubmed.pubmedEntry.instancesDict
         annotation_entries = Pubmed.pubmedEntry.allAnnotations
         synonyms = Pubmed.pubmedEntry.dictSynonyms
 
+        # make a gene list if there was none provided from the gathered annotation
         if len(gene_list) == 0:
             for id, dictionary in annotation_entries.items():
+                # if genes were found in the article take the most common one and put it in the list
                 if 'Gene' in dictionary.keys():
                     common = most_frequent(dictionary['Gene'])
                     if common not in gene_list:
                         gene_list.append(common)
 
+        # once all genes are gathered find the ids of OMIM, Uniprot and NCBI in the database and return these in a dic
         omim_ids = Omim.find_in_database(gene_list=gene_list)
 
+        # if there was no gene list there will be no synonyms so the gene list is equal to the synonyms
         if len(synonyms) == 0:
             synonyms = gene_list
 
+        # make a dictionary with the genes and their synonyms and then sort the articles based on genes occurring
         gene_dic = make_genedic(synonyms)
+        # also count the amount of articles and add to the annotation if necessary
         gene_dic, count_data, annotation_entries = fill_genedic(gene_dic, annotation_entries, gene_panel)
 
+        # make a dataframe for the wordclouds in the application with the frequency per word (disease, gene, mutation)
         data = {}
-        data = make_wordcloud_dataframe(data)
+        data = make_wordcloud_dataframe(data, annotation_entries)
 
+        # add some dictionaries together for easy access
         full_dicy.update({"articles": gene_dic})
         full_dicy.update({"omim_id": omim_ids})
         full_dicy.update({"amount_found": count_data})
 
+        # make a csv string to download from the website
         csv_data = make_csv_data(annotation_entries)
 
     return render_template("Searchpage.html", genedic=full_dicy, infodic=annotation_entries,
                            recipe_dict=count_data, entries=pubmed_entries, data=data, csv_data=csv_data,
-                           gene_panel=gene_panel,  show_result=show_result)
+                           gene_panel=gene_panel, show_result=show_result, plot_data=plot_data)
 
 
 def getForm_data(result):
@@ -89,6 +103,7 @@ def getForm_data(result):
     :param result: dictionary with form data
     :return: pub_date, disease_char, gene_list, mail, search_date, organism, search_list, gene_panel, amount_of_articles
     """
+    # instance all variables
     pub_date = "1000"
     disease_char = ""
     gene_list = []
@@ -99,11 +114,20 @@ def getForm_data(result):
     gene_panel = ""
     amount_of_articles = None
     today = datetime.date.today()
+    plot_data = True
+
+    # get all data from the form by key and value
     for key, value in result.items():
         if key == "publication_date":
             pub_date = value
+            # for some reason the form couldn't deal with 3 so yes..
             if pub_date == "2":
                 pub_date = "3"
+            # if the publication date is more than 9 months turn the plot visualisation off for memory issues
+            # (might not be implemented)
+            if int(pub_date) > 9:
+                plot_data = False
+            # calculate the date
             search_date = do_MATH_months(today, -int(pub_date))
         elif key == "gene_panel":
             gene_panel = value
@@ -113,6 +137,7 @@ def getForm_data(result):
                 gene_panel = {}
         elif key == "disease_characteristic":
             disease_char = value
+            # make a list by splitting everything on the ,
             search_list = disease_char.split(",")
         elif key == "organism":
             organism = value
@@ -122,15 +147,18 @@ def getForm_data(result):
             mail = value
 
         elif key == "gene_list":
+            # make the gene_list string into a list and take out nonsense
             values = value.split("\n")
             for thing in values:
                 thing = thing.strip("\r")
                 thing = thing.strip(" ")
                 if thing != " " and thing != "":
                     gene_list.append(thing)
+    # if there was no publication date given take publication date 1000 doubt you need to search further back than that
     if "publication_date" not in result.keys():
+        plot_data = False
         search_date = do_MATH_months(today, -int(pub_date))
-    return pub_date, disease_char, gene_list, mail, search_date, organism, search_list, gene_panel, amount_of_articles
+    return pub_date, disease_char, gene_list, mail, search_date, organism, search_list, gene_panel, amount_of_articles, plot_data
 
 
 def most_frequent(List):
@@ -154,10 +182,13 @@ def make_genedic(Synonymdict):
     :param Synonymdict: dictionary with gene as key and a list with synonyms as value
     :return: gene dic {key = genename : value = {key = genename or synonym, value = list [] }}
     """
+    # make a gene dic with all genes and their synonyms with empty lists for the article objects to go in
     gene_dic = {}
+    # if there was no gene_list/synonym dict we do it slightly different
     if type(Synonymdict) is list:
         for gene in Synonymdict:
             gene_dic.update({gene: {gene: []}})
+    # if there was a gene list there will be synonyms so they will be added too
     else:
         for gene, synonyms in Synonymdict.items():
             if gene != '':
@@ -176,6 +207,7 @@ def check_genepanel(gene, genepanel):
     :param genepanel: gene panel dictionary {key = gene_name , value = [panels containing gene]}
     :return: panels the searched gene is in
     """
+    # check if in gene panel genes
     if gene in genepanel.keys():
         return genepanel[gene]
 
@@ -191,13 +223,16 @@ def add_to_count(item, gene, count_data, gene_panel):
     :param gene_panel: dictionary of gene panel {key = gene, value = [panels]}
     :return: updated count_data
     """
+    # if the gene is in there and you find an article you add 1
     if gene in count_data:
         count_data[gene][0] += 1
+    # if the gene was not yet in there add 1 and search if it is in the gene panel
     else:
         count_data.update({gene: [1, []]})
         if gene_panel:
             panel = check_genepanel(gene, gene_panel)
             count_data[gene][1] = panel
+            # if it isn't in the gene panel raise the score
             if panel is not None:
                 score = item.getScore()
                 item.setScore(score + 0.5)
@@ -217,16 +252,14 @@ def fill_genedic(gene_dic, infodic, gene_panel):
     """
     count_data = {}
     for item in Pubmed.pubmedEntry.instancesDict.values():
-        MLinfo = item.getMlinfo()
-        if MLinfo:
+        id = item.pubmedID
+        if infodic.get(id):
             for basic_gene, dic in gene_dic.items():
                 for gene in dic.keys():
-                    for dictionary in MLinfo.values():
-                        if 'Gene' in dictionary.keys():
-                            if gene in dictionary['Gene']:
-                                if item not in gene_dic[basic_gene][gene]:
-                                    gene_dic[basic_gene][gene].append(item)
-                                    add_to_count(item, gene, count_data, gene_panel)
+                    if 'Gene' in infodic[id].keys() and gene in infodic[id]['Gene']:
+                        if item not in gene_dic[basic_gene][gene]:
+                            gene_dic[basic_gene][gene].append(item)
+                            add_to_count(item, gene, count_data, gene_panel)
 
         else:
             gene_found = search_for_genes_regex(item, infodic)
@@ -266,7 +299,6 @@ def search_for_genes_regex(item, infodic):
             if "({})".format(value) not in about and "({}s)".format(value) not in about:
                 gene_found.append(value)
                 annotations.update({id_entry: {"Gene": gene_found}})
-                item.setMLinfo(annotations)
                 infodic.update({id_entry: {"Gene": gene_found}})
     return gene_found
 
@@ -285,23 +317,21 @@ def do_MATH_months(sourcedate, months):
     return datetime.date(year, month, day)
 
 
-def make_wordcloud_dataframe(data):
+def make_wordcloud_dataframe(data, annotation_entries):
     """
     makes a dataframe for the wordcloud of each entry by counting the frequency of every word in the annotation
     :param data: empty dictionary
     :return: filled data, {key = pubmed_id, value = [word, frequency, type of annotation]}
     """
-    for item in Pubmed.pubmedEntry.instancesDict.values():
-        starting_dic = item.getMlinfo()
-        for id_entry, dictionary in starting_dic.items():
-            data.update({id_entry: []})
-            for type_annotation, listy in dictionary.items():
-                frequency = collections.Counter(listy)
-                for word in listy:
-                    frequency_word = frequency[word]
-                    list_for_dic = [word, frequency_word, type_annotation]
-                    if list_for_dic not in data[id_entry]:
-                        data[id_entry].append(list_for_dic)
+    for id_entry, dictionary in annotation_entries.items():
+        data.update({id_entry: []})
+        for type_annotation, listy in dictionary.items():
+            frequency = collections.Counter(listy)
+            for word in listy:
+                frequency_word = frequency[word]
+                list_for_dic = [word, frequency_word, type_annotation]
+                if list_for_dic not in data[id_entry]:
+                    data[id_entry].append(list_for_dic)
     return data
 
 

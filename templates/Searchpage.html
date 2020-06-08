@@ -261,10 +261,10 @@ th {
             <div class="w3-cell" style="width: 90%">
             {% if gene_panel %}
             {% if name in gene_panel.keys() %}
-             <button onclick="myopen('{{name }}')" class=" filterDiv no_gene w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
+             <button onclick="myopen('{{name }}')" class=" filterDiv yes_gene w3-button w3-block w3-hover-black w3-theme-l2 w3-round-xlarge w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
                 {% else %}
-                <button onclick="myopen('{{name }}')" class=" filterDiv yes_gene w3-button w3-block w3-hover-black  bluey w3-round-xlarge w3-left-align">
+                <button onclick="myopen('{{name }}')" class=" filterDiv no_gene w3-button w3-block w3-hover-black  bluey w3-round-xlarge w3-left-align">
                  {{ name }}  <i class='fas fa-angle-down'></i> </button>
             {% endif %}
             {% else %}
