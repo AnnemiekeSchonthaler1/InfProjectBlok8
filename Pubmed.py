@@ -289,7 +289,7 @@ def getPubmedArticlesByID(idList, searchTerm):
                 month_number = datetime_object.month
             except ValueError:
                 # deze exeption is er voor als ik het maandnummer in een onverwacht format krijg
-                month_number = 1
+                month_number = "01"
             date = date[0] + "/" + str(month_number) + "/" + date[2]
 
         pubmedEntryInstance.setDatePublication(date)
