@@ -1,5 +1,10 @@
+"""
+Dit script zoekt de ids bij een gen naam in een database
+Gemaakt door: Sanne van Staveren
+Versie: 2.0
+Gemaakt op: 09-06-2020
+"""
 import mysql
-from Bio import Entrez, Medline
 from mysql.connector import Error
 
 
@@ -14,6 +19,7 @@ def find_in_database(gene_list):
     :param gene_list: list of genes
     :return: dictionary met de ids gelinked aan de genes
     """
+    # instance variables
     omim_id_dic = {}
     big_string = []
     connection = ""
@@ -48,9 +54,7 @@ def find_in_database(gene_list):
                     omim_id_dic[record[0]].append(omim)
                     omim_id_dic[record[0]].append(uni)
                     omim_id_dic[record[0]].append(ncbi)
-                else:
-                    id_found = textmine_in_OMIM(record[0])
-                    omim_id_dic.update({record[0]: [id_found]})
+
     except Error as e:
         print("Error while connecting to MySQL", e)
     finally:
@@ -61,21 +65,4 @@ def find_in_database(gene_list):
 
     return omim_id_dic
 
-
-def textmine_in_OMIM(term):
-    """
-    if the gene is not in the database there will be an attempt at finding it by textmining in OMIM
-    :param term:
-    :return:
-    """
-    found_id = ""
-    Entrez.email = 'A.N.Other@example.com'
-    handle = Entrez.esearch(db="omim", term=term)
-    record = Entrez.read(handle)
-    handle.close()
-    idlist = record["IdList"]
-    #print("idlist = ", idlist)
-    for item in idlist:
-        found_id = item
-    return found_id
 

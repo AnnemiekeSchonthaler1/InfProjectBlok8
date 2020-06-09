@@ -1,3 +1,10 @@
+"""
+Dit script Zorgt voor de functionaliteit van de web applicatie en zorgt dat de user input bij de search methode terecht
+komt. Verder berwerkt hij de data tot het use able is voor de html template en jinja
+Gemaakt door: Sanne van Staveren
+Versie: 2.0
+Gemaakt op: 09-06-2020
+"""
 import calendar
 import collections
 
